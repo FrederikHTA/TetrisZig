@@ -6,8 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="b81935cf-a3f3-4e14-b2dc-240be51d37d7" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.zig" beforeDir="false" afterPath="$PROJECT_DIR$/build.zig" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.zig.zon" beforeDir="false" afterPath="$PROJECT_DIR$/build.zig.zon" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.zig" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.zig" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -88,7 +86,7 @@
       <updated>1753736014338</updated>
       <workItem from="1753736014340" duration="3457000" />
       <workItem from="1753739557203" duration="384000" />
-      <workItem from="1753739977183" duration="23000" />
+      <workItem from="1753739977183" duration="280000" />
     </task>
     <task id="LOCAL-00001" summary="add zig init with raylib imported">
       <option name="closed" value="true" />
@@ -98,7 +96,15 @@
       <option name="project" value="LOCAL" />
       <updated>1753738333899</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="re-added zig init examples">
+      <option name="closed" value="true" />
+      <created>1753740031747</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1753740031747</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -109,7 +115,8 @@
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
     <MESSAGE value="add zig init with raylib imported" />
-    <option name="LAST_COMMIT_MESSAGE" value="add zig init with raylib imported" />
+    <MESSAGE value="re-added zig init examples" />
+    <option name="LAST_COMMIT_MESSAGE" value="re-added zig init examples" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
