@@ -6,8 +6,8 @@ const Color = @import("raylib.color");
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const screenWidth = 800;
-    const screenHeight = 450;
+    const screenWidth = 400;
+    const screenHeight = 800;
 
     rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
@@ -27,9 +27,15 @@ pub fn main() !void {
         rl.beginDrawing();
         defer rl.endDrawing();
 
-        rl.clearBackground(.white);
+        rl.clearBackground(rl.Color.black);
 
-        rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.black);
+        rl.drawText(
+            "Congrats! You created your first window!",
+            screenWidth / 2,
+            screenHeight / 2,
+            20,
+            rl.Color.light_gray,
+        );
         //----------------------------------------------------------------------------------
     }
 }
@@ -40,7 +46,7 @@ pub fn main() !void {
 //     try list.append(42);
 //     try std.testing.expectEqual(@as(i32, 42), list.pop());
 // }
-// 
+//
 // test "fuzz example" {
 //     const Context = struct {
 //         fn testOne(context: @This(), input: []const u8) anyerror!void {
