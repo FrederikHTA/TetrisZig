@@ -27,7 +27,6 @@ const BlockType = enum {
     }
 };
 
-// Active block struct
 const ActiveBlock = struct {
     block_type: BlockType,
     x: i32, // grid position
@@ -35,57 +34,56 @@ const ActiveBlock = struct {
     rotation: u2, // 0 = spawn, 1 = right, 2 = reverse, 3 = left
 };
 
-// Game state struct
 const GameState = struct {
     active_block: ActiveBlock,
     grid: [GRID_HEIGHT][GRID_WIDTH]?BlockType, // null = empty, otherwise filled
     fall_timer: f32,
 };
 
-const BlockDef = struct {
+const BlockDefinition = struct {
     color: rl.Color,
     positions: [4][2]i32, // 4 squares, each with x,y offset
 };
 
-fn getBlockDef(block: BlockType) BlockDef {
+fn getBlockDefinition(block: BlockType) BlockDefinition {
     return switch (block) {
-        .I => BlockDef{
+        .I => BlockDefinition{
             .color = rl.Color.sky_blue,
             .positions = .{
                 .{ 0, 0 }, .{ 0, 1 }, .{ 0, 2 }, .{ 0, 3 },
             },
         },
-        .O => BlockDef{
+        .O => BlockDefinition{
             .color = rl.Color.yellow,
             .positions = .{
                 .{ 0, 0 }, .{ 1, 0 }, .{ 0, 1 }, .{ 1, 1 },
             },
         },
-        .S => BlockDef{
+        .S => BlockDefinition{
             .color = rl.Color.green,
             .positions = .{
                 .{ 1, 0 }, .{ 2, 0 }, .{ 0, 1 }, .{ 1, 1 },
             },
         },
-        .Z => BlockDef{
+        .Z => BlockDefinition{
             .color = rl.Color.red,
             .positions = .{
                 .{ 0, 0 }, .{ 1, 0 }, .{ 1, 1 }, .{ 2, 1 },
             },
         },
-        .J => BlockDef{
+        .J => BlockDefinition{
             .color = rl.Color.blue,
             .positions = .{
                 .{ 0, 0 }, .{ 0, 1 }, .{ 0, 2 }, .{ 1, 2 },
             },
         },
-        .L => BlockDef{
+        .L => BlockDefinition{
             .color = rl.Color.orange,
             .positions = .{
                 .{ 1, 0 }, .{ 1, 1 }, .{ 1, 2 }, .{ 0, 2 },
             },
         },
-        .T => BlockDef{
+        .T => BlockDefinition{
             .color = rl.Color.purple,
             .positions = .{
                 .{ 0, 0 }, .{ 1, 0 }, .{ 2, 0 }, .{ 1, 1 },
@@ -95,8 +93,8 @@ fn getBlockDef(block: BlockType) BlockDef {
 }
 
 fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32, rotation: u2) void {
-    const def = getBlockDef(block);
-    const positions = rotatePositions(block, def.positions, rotation);
+    const def = getBlockDefinition(block);
+    const positions = rotateBlock(block, def.positions, rotation);
     for (positions) |pos| {
         const x = origin_x + (pos[0] * BLOCK_SIZE);
         const y = origin_y + (pos[1] * BLOCK_SIZE);
@@ -116,11 +114,6 @@ fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32, rotation: u2)
             rl.Color.black,
         );
     }
-}
-
-// Helper to initialize the grid
-fn initGrid() [GRID_HEIGHT][GRID_WIDTH]?BlockType {
-    return [_][GRID_WIDTH]?BlockType{[_]?BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT;
 }
 
 fn spawnRandomBlock(state: *GameState) void {
@@ -161,7 +154,7 @@ fn handleMovement(state: *GameState) void {
     }
 }
 
-fn rotatePositions(block: BlockType, positions: [4][2]i32, rotation: u2) [4][2]i32 {
+fn rotateBlock(block: BlockType, positions: [4][2]i32, rotation: u2) [4][2]i32 {
     var rotated: [4][2]i32 = positions;
     switch (block) {
         .O => {
@@ -173,6 +166,8 @@ fn rotatePositions(block: BlockType, positions: [4][2]i32, rotation: u2) [4][2]i
                 const x = pos[0];
                 const y = pos[1];
                 // SRS: rotate around origin (0,0)
+                // TODO: Isnt this technically incorrect? In SRS, the rotation happens around the center of the block
+                // but here we are rotating around the top-left corner, since this implementation doesnt use 3x3/4x4 grid for block definitions
                 switch (rotation) {
                     0 => rotated[i] = .{ x, y },
                     1 => rotated[i] = .{ -y, x },
@@ -199,7 +194,12 @@ fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
 }
 
 fn canRotateBlock(state: *GameState, new_rotation: u2) bool {
-    const positions = rotatePositions(state.active_block.block_type, getActiveBlockPositions(state.active_block), new_rotation);
+    const positions = rotateBlock(
+        state.active_block.block_type,
+        getActiveBlockPositions(state.active_block),
+        new_rotation,
+    );
+    
     for (positions) |pos| {
         const x = state.active_block.x + pos[0];
         const y = state.active_block.y + pos[1];
@@ -223,15 +223,15 @@ fn placeBlock(state: *GameState) void {
 }
 
 fn getActiveBlockPositions(active: ActiveBlock) [4][2]i32 {
-    const def = getBlockDef(active.block_type);
-    return rotatePositions(active.block_type, def.positions, active.rotation);
+    const blockDefinition = getBlockDefinition(active.block_type);
+    return rotateBlock(active.block_type, blockDefinition.positions, active.rotation);
 }
 
 fn drawGrid(state: *GameState) void {
     for (state.grid, 0..) |row, y| {
         for (row, 0..) |cell, x| {
             if (cell) |block| {
-                const def = getBlockDef(block);
+                const def = getBlockDefinition(block);
                 rl.drawRectangle(
                     @as(i32, @intCast(x)) * BLOCK_SIZE,
                     @as(i32, @intCast(y)) * BLOCK_SIZE,
@@ -276,7 +276,7 @@ pub fn main() !void {
 
     var state = GameState{
         .active_block = activeBlock,
-        .grid = initGrid(),
+        .grid = [_][GRID_WIDTH]?BlockType{[_]?BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
         .fall_timer = 0.0,
     };
 
