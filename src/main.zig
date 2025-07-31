@@ -199,7 +199,7 @@ fn canRotateBlock(state: *GameState, new_rotation: u2) bool {
         getActiveBlockPositions(state.active_block),
         new_rotation,
     );
-    
+
     for (positions) |pos| {
         const x = state.active_block.x + pos[0];
         const y = state.active_block.y + pos[1];
@@ -218,6 +218,31 @@ fn placeBlock(state: *GameState) void {
         const y = state.active_block.y + pos[1];
         if (x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT) {
             state.grid[@intCast(y)][@intCast(x)] = state.active_block.block_type;
+        }
+    }
+    clearFullLines(state);
+}
+
+fn clearFullLines(state: *GameState) void {
+    var y: i32 = GRID_HEIGHT - 1;
+    while (y >= 0) : (y -= 1) {
+        var is_full = true;
+        for (state.grid[@intCast(y)]) |cell| {
+            if (cell == null) {
+                is_full = false;
+                break;
+            }
+        }
+        if (is_full) {
+            // Clear the line and move everything above down
+            var row = y;
+            while (row > 0) : (row -= 1) {
+                state.grid[@intCast(row)] = state.grid[@intCast(row - 1)];
+            }
+            // Clear the top row
+            state.grid[0] = [_]?BlockType{null} ** GRID_WIDTH;
+            // Stay at same y to check the new line at this position
+            y += 1;
         }
     }
 }
