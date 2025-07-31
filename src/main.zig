@@ -398,9 +398,10 @@ pub fn main() !void {
         drawBlockPreview(&state);
         drawActiveBlock(&state);
         drawSidebar(&state);
+        // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
-        // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Save blocks
+        // TODO: Use bag randomizer for blocks, so all blocks are used before repeating
     }
 }
