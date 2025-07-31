@@ -8,7 +8,8 @@ const GRID_HEIGHT: i32 = 20;
 const BLOCK_SIZE: i32 = 40;
 const FALL_INTERVAL: f32 = 0.5;
 const BLOCK_START_OFFSET: i32 = 2;
-const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE;
+const SIDEBAR_WIDTH: i32 = 200; // Width of the sidebar for score display
+const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + SIDEBAR_WIDTH;
 const SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
 
 const BlockType = enum {
@@ -38,6 +39,7 @@ const GameState = struct {
     active_block: ActiveBlock,
     grid: [GRID_HEIGHT][GRID_WIDTH]?BlockType, // null = empty, otherwise filled
     fall_timer: f32,
+    score: u32 = 0, // Score for cleared lines
 };
 
 const BlockDefinition = struct {
@@ -152,6 +154,16 @@ fn handleMovement(state: *GameState) void {
             state.active_block.rotation = new_rotation;
         }
     }
+    if (rl.isKeyPressed(rl.KeyboardKey.space)) {
+        // TODO: dont duplicate logic 
+        while (canMoveBlock(state, 0, 1)) {
+            state.active_block.y += 1;
+        }
+        placeBlock(state);
+        clearFullLines(state);
+        spawnRandomBlock(state);
+        state.fall_timer = 0.0;
+    }
 }
 
 fn rotateBlock(block: BlockType, positions: [4][2]i32, rotation: u2) [4][2]i32 {
@@ -222,11 +234,11 @@ fn placeBlock(state: *GameState) void {
             state.grid[@intCast(y)][@intCast(x)] = state.active_block.block_type;
         }
     }
-    clearFullLines(state);
 }
 
 fn clearFullLines(state: *GameState) void {
     var y: i32 = GRID_HEIGHT - 1;
+    var linesCleared: u16 = 0;
     while (y >= 0) : (y -= 1) {
         var is_full = true;
         for (state.grid[@intCast(y)]) |cell| {
@@ -236,6 +248,7 @@ fn clearFullLines(state: *GameState) void {
             }
         }
         if (is_full) {
+            linesCleared += 1;
             // Clear the line and move everything above down
             var row = y;
             while (row > 0) : (row -= 1) {
@@ -247,6 +260,8 @@ fn clearFullLines(state: *GameState) void {
             y += 1;
         }
     }
+
+    state.score += 100 * @as(u32, linesCleared);
 }
 
 fn getActiveBlockPositions(active: ActiveBlock) [4][2]i32 {
@@ -287,6 +302,25 @@ fn drawActiveBlock(state: *GameState) void {
     );
 }
 
+// Draw the score in the sidebar
+fn drawSidebar(state: *GameState) void {
+    const sidebar_x = GRID_WIDTH * BLOCK_SIZE;
+    // Draw sidebar background
+    rl.drawRectangle(
+        sidebar_x,
+        0,
+        SIDEBAR_WIDTH,
+        SCREEN_HEIGHT,
+        rl.Color.dark_gray, // Choose a distinct color
+    );
+    // Draw score text
+    const text_x = sidebar_x + (SIDEBAR_WIDTH / 4);
+    rl.drawText("Score:", text_x, 40, 32, rl.Color.white);
+    var score_buf: [16]u8 = undefined;
+    const score_str = std.fmt.bufPrintZ(&score_buf, "{d}", .{state.score}) catch "0";
+    rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
+}
+
 // Main game loop
 pub fn main() !void {
     // Initialization
@@ -316,6 +350,7 @@ pub fn main() !void {
                 state.active_block.y += 1;
             } else {
                 placeBlock(&state);
+                clearFullLines(&state);
                 spawnRandomBlock(&state);
             }
             state.fall_timer = 0.0;
@@ -327,12 +362,11 @@ pub fn main() !void {
         rl.clearBackground(rl.Color.black);
         drawGrid(&state);
         drawActiveBlock(&state);
-        // TODO: Point system
+        drawSidebar(&state);
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
         // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Save blocks
         // TODO: Block placement preview
-        // TODO: Instant block drop
     }
 }
