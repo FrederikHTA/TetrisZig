@@ -190,7 +190,7 @@ fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
         // For downward movement, check collision with placed blocks
         if (dy != 0 and state.grid[@intCast(y)][@intCast(x)] != null) return false;
         // For horizontal movement, check collision with placed blocks
-         if (dx != 0 and state.grid[@intCast(y)][@intCast(x)] != null) return false;
+        if (dx != 0 and state.grid[@intCast(y)][@intCast(x)] != null) return false;
     }
     return true;
 }
