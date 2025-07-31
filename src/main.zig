@@ -330,5 +330,7 @@ pub fn main() !void {
         // TODO: Point system
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
+        // TODO: Fix rotation / wall kicks / can rotate into other blocks
+        // TODO: Save blocks
     }
 }
