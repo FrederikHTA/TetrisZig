@@ -325,5 +325,8 @@ pub fn main() !void {
         rl.clearBackground(rl.Color.black);
         drawGrid(&state);
         drawActiveBlock(&state);
+        // TODO: Point system
+        // TODO: Die when blocks reach top
+        // TODO: Next block incoming?
     }
 }
