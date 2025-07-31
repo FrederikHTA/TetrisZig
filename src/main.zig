@@ -3,7 +3,12 @@ const tetris = @import("tetris");
 const rl = @import("raylib");
 const Color = @import("raylib.color");
 
-const BlockSize = 40;
+// Game configuration constants
+const GRID_WIDTH: i32 = 10;
+const GRID_HEIGHT: i32 = 20;
+const BLOCK_SIZE: i32 = 40;
+const FALL_INTERVAL: f32 = 0.5;
+const BLOCK_START_OFFSET: i32 = 2;
 
 const BlockType = enum {
     I,
@@ -70,39 +75,39 @@ fn getBlockDef(block: BlockType) BlockDef {
 fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32) void {
     const def = getBlockDef(block);
     for (def.positions) |pos| {
-        const x = origin_x + (pos[0] * BlockSize);
-        const y = origin_y + (pos[1] * BlockSize);
+        const x = origin_x + (pos[0] * BLOCK_SIZE);
+        const y = origin_y + (pos[1] * BLOCK_SIZE);
         rl.drawRectangle(
             x,
             y,
-            BlockSize,
-            BlockSize,
+            BLOCK_SIZE,
+            BLOCK_SIZE,
             def.color,
         );
         // Draw border for visual separation
         rl.drawRectangleLines(
             x,
             y,
-            BlockSize,
-            BlockSize,
+            BLOCK_SIZE,
+            BLOCK_SIZE,
             rl.Color.black,
         );
     }
 }
 
-const GridWidth: i32 = 10;
-const GridHeight: i32 = 20;
-
+// Game state struct
 const GameState = struct {
     active_block: BlockType,
     block_x: i32, // grid position
     block_y: i32, // grid position
-    grid: [GridHeight][GridWidth]?BlockType, // null = empty, otherwise filled
+    grid: [GRID_HEIGHT][GRID_WIDTH]?BlockType, // null = empty, otherwise filled
     fall_timer: f32,
 };
 
-const FallInterval: f32 = 0.5;
-const BlockStartOffset: i32 = 2;
+// Helper to initialize the grid
+fn initGrid() [GRID_HEIGHT][GRID_WIDTH]?BlockType {
+    return [_][GRID_WIDTH]?BlockType{[_]?BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT;
+}
 
 fn getRandomBlock() BlockType {
     const block_types = [_]BlockType{ .I, .O, .S, .Z, .J, .L, .T };
@@ -112,7 +117,7 @@ fn getRandomBlock() BlockType {
 
 fn spawnRandomBlock(state: *GameState) void {
     state.active_block = getRandomBlock();
-    state.block_x = GridWidth / 2 - BlockStartOffset;
+    state.block_x = GRID_WIDTH / 2 - BLOCK_START_OFFSET;
     state.block_y = 0;
 }
 
@@ -143,7 +148,7 @@ fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
         const x = state.block_x + pos[0] + dx;
         const y = state.block_y + pos[1] + dy;
         // Check bounds
-        if (x < 0 or x >= GridWidth or y < 0 or y >= GridHeight) return false;
+        if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
         // For downward movement, check collision with placed blocks
         if (dy != 0 and state.grid[@intCast(y)][@intCast(x)] != null) return false;
     }
@@ -155,7 +160,7 @@ fn placeBlock(state: *GameState) void {
     for (def.positions) |pos| {
         const x = state.block_x + pos[0];
         const y = state.block_y + pos[1];
-        if (x >= 0 and x < GridWidth and y >= 0 and y < GridHeight) {
+        if (x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT) {
             state.grid[@intCast(y)][@intCast(x)] = state.active_block;
         }
     }
@@ -167,17 +172,17 @@ fn drawGrid(state: *GameState) void {
             if (cell) |block| {
                 const def = getBlockDef(block);
                 rl.drawRectangle(
-                    @as(i32, @intCast(x)) * BlockSize,
-                    @as(i32, @intCast(y)) * BlockSize,
-                    BlockSize,
-                    BlockSize,
+                    @as(i32, @intCast(x)) * BLOCK_SIZE,
+                    @as(i32, @intCast(y)) * BLOCK_SIZE,
+                    BLOCK_SIZE,
+                    BLOCK_SIZE,
                     def.color,
                 );
                 rl.drawRectangleLines(
-                    @as(i32, @intCast(x)) * BlockSize,
-                    @as(i32, @intCast(y)) * BlockSize,
-                    BlockSize,
-                    BlockSize,
+                    @as(i32, @intCast(x)) * BLOCK_SIZE,
+                    @as(i32, @intCast(y)) * BLOCK_SIZE,
+                    BLOCK_SIZE,
+                    BLOCK_SIZE,
                     rl.Color.black,
                 );
             }
@@ -186,35 +191,31 @@ fn drawGrid(state: *GameState) void {
 }
 
 fn drawActiveBlock(state: *GameState) void {
-    drawTetrisBlock(state.active_block, state.block_x * BlockSize, state.block_y * BlockSize);
+    drawTetrisBlock(state.active_block, state.block_x * BLOCK_SIZE, state.block_y * BLOCK_SIZE);
 }
 
+// Main game loop
 pub fn main() !void {
     // Initialization
-    //--------------------------------------------------------------------------------------
-    const screenWidth = GridWidth * BlockSize;
-    const screenHeight = GridHeight * BlockSize;
-
+    const screenWidth = GRID_WIDTH * BLOCK_SIZE;
+    const screenHeight = GRID_HEIGHT * BLOCK_SIZE;
     rl.initWindow(screenWidth, screenHeight, "Tetris Clone");
-    defer rl.closeWindow(); // Close window and OpenGL context
-
-    rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
-    //--------------------------------------------------------------------------------------
+    defer rl.closeWindow();
+    rl.setTargetFPS(60);
 
     var state = GameState{
         .active_block = getRandomBlock(),
-        .block_x = GridWidth / 2 - 2,
+        .block_x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
         .block_y = 0,
-        .grid = [_][GridWidth]?BlockType{[_]?BlockType{null} ** GridWidth} ** GridHeight,
+        .grid = initGrid(),
         .fall_timer = 0.0,
     };
 
-    // Main game loop
     while (!rl.windowShouldClose()) {
         // Update
         state.fall_timer += rl.getFrameTime();
         handleMovement(&state);
-        if (state.fall_timer > FallInterval) {
+        if (state.fall_timer > FALL_INTERVAL) {
             if (canMoveBlock(&state, 0, 1)) {
                 state.block_y += 1;
             } else {
@@ -227,7 +228,6 @@ pub fn main() !void {
         // Draw
         rl.beginDrawing();
         defer rl.endDrawing();
-
         rl.clearBackground(rl.Color.black);
         drawGrid(&state);
         drawActiveBlock(&state);
