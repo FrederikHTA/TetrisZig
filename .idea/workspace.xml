@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b81935cf-a3f3-4e14-b2dc-240be51d37d7" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/copilot-instructions.md" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,7 +88,7 @@
       <workItem from="1753739557203" duration="384000" />
       <workItem from="1753739977183" duration="489000" />
       <workItem from="1753876623405" duration="2492000" />
-      <workItem from="1753953885772" duration="8161000" />
+      <workItem from="1753953885772" duration="8248000" />
     </task>
     <task id="LOCAL-00001" summary="add zig init with raylib imported">
       <option name="closed" value="true" />
@@ -122,7 +122,15 @@
       <option name="project" value="LOCAL" />
       <updated>1753962587012</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="update gitinore">
+      <option name="closed" value="true" />
+      <created>1753962617183</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1753962617183</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -136,7 +144,8 @@
     <MESSAGE value="re-added zig init examples" />
     <MESSAGE value="use rl.Color.black instead as it has completion support" />
     <MESSAGE value="functionally working implementation of Tetris.&#10;Currently doesnt support rotations." />
-    <option name="LAST_COMMIT_MESSAGE" value="functionally working implementation of Tetris.&#10;Currently doesnt support rotations." />
+    <MESSAGE value="update gitinore" />
+    <option name="LAST_COMMIT_MESSAGE" value="update gitinore" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
