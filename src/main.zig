@@ -1,7 +1,6 @@
 const std = @import("std");
 const tetris = @import("tetris");
 const rl = @import("raylib");
-const Color = @import("raylib.color");
 
 // Game configuration constants
 const GRID_WIDTH: i32 = 10;
@@ -20,6 +19,26 @@ const BlockType = enum {
     J,
     L,
     T,
+
+    pub fn getRandom() BlockType {
+        const block_types = [_]BlockType{ .I, .O, .S, .Z, .J, .L, .T };
+        const rand_index = std.crypto.random.intRangeLessThan(usize, 0, block_types.len);
+        return block_types[rand_index];
+    }
+};
+
+// Active block struct
+const ActiveBlock = struct {
+    block_type: BlockType,
+    x: i32, // grid position
+    y: i32, // grid position
+};
+
+// Game state struct
+const GameState = struct {
+    active_block: ActiveBlock,
+    grid: [GRID_HEIGHT][GRID_WIDTH]?BlockType, // null = empty, otherwise filled
+    fall_timer: f32,
 };
 
 const BlockDef = struct {
@@ -97,47 +116,35 @@ fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32) void {
     }
 }
 
-// Game state struct
-const GameState = struct {
-    active_block: BlockType,
-    block_x: i32, // grid position
-    block_y: i32, // grid position
-    grid: [GRID_HEIGHT][GRID_WIDTH]?BlockType, // null = empty, otherwise filled
-    fall_timer: f32,
-};
-
 // Helper to initialize the grid
 fn initGrid() [GRID_HEIGHT][GRID_WIDTH]?BlockType {
     return [_][GRID_WIDTH]?BlockType{[_]?BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT;
 }
 
-fn getRandomBlock() BlockType {
-    const block_types = [_]BlockType{ .I, .O, .S, .Z, .J, .L, .T };
-    const rand_index = std.crypto.random.intRangeLessThan(usize, 0, block_types.len);
-    return block_types[rand_index];
-}
-
 fn spawnRandomBlock(state: *GameState) void {
-    state.active_block = getRandomBlock();
-    state.block_x = GRID_WIDTH / 2 - BLOCK_START_OFFSET;
-    state.block_y = 0;
+    const active_block = ActiveBlock{
+        .block_type = BlockType.getRandom(),
+        .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
+        .y = 0,
+    };
+    state.active_block = active_block;
 }
 
 fn handleMovement(state: *GameState) void {
     if (rl.isKeyPressed(rl.KeyboardKey.left)) {
         if (canMoveBlock(state, -1, 0)) {
-            state.block_x -= 1;
+            state.active_block.x -= 1;
         }
     }
     if (rl.isKeyPressed(rl.KeyboardKey.right)) {
         if (canMoveBlock(state, 1, 0)) {
-            state.block_x += 1;
+            state.active_block.x += 1;
         }
     }
     if (rl.isKeyDown(rl.KeyboardKey.down)) {
         // Drop block faster if possible
         if (canMoveBlock(state, 0, 1)) {
-            state.block_y += 1;
+            state.active_block.y += 1;
             // Optionally, reset fall_timer to avoid double move in same frame
             state.fall_timer = 0.0;
         }
@@ -145,10 +152,10 @@ fn handleMovement(state: *GameState) void {
 }
 
 fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
-    const def = getBlockDef(state.active_block);
+    const def = getBlockDef(state.active_block.block_type);
     for (def.positions) |pos| {
-        const x = state.block_x + pos[0] + dx;
-        const y = state.block_y + pos[1] + dy;
+        const x = state.active_block.x + pos[0] + dx;
+        const y = state.active_block.y + pos[1] + dy;
         // Check bounds
         if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
         // For downward movement, check collision with placed blocks
@@ -158,12 +165,12 @@ fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
 }
 
 fn placeBlock(state: *GameState) void {
-    const def = getBlockDef(state.active_block);
+    const def = getBlockDef(state.active_block.block_type);
     for (def.positions) |pos| {
-        const x = state.block_x + pos[0];
-        const y = state.block_y + pos[1];
+        const x = state.active_block.x + pos[0];
+        const y = state.active_block.y + pos[1];
         if (x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT) {
-            state.grid[@intCast(y)][@intCast(x)] = state.active_block;
+            state.grid[@intCast(y)][@intCast(x)] = state.active_block.block_type;
         }
     }
 }
@@ -193,7 +200,7 @@ fn drawGrid(state: *GameState) void {
 }
 
 fn drawActiveBlock(state: *GameState) void {
-    drawTetrisBlock(state.active_block, state.block_x * BLOCK_SIZE, state.block_y * BLOCK_SIZE);
+    drawTetrisBlock(state.active_block.block_type, state.active_block.x * BLOCK_SIZE, state.active_block.y * BLOCK_SIZE);
 }
 
 // Main game loop
@@ -203,10 +210,14 @@ pub fn main() !void {
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
+    const activeBlock = ActiveBlock{
+        .block_type = BlockType.getRandom(),
+        .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
+        .y = 0,
+    };
+
     var state = GameState{
-        .active_block = getRandomBlock(),
-        .block_x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
-        .block_y = 0,
+        .active_block = activeBlock,
         .grid = initGrid(),
         .fall_timer = 0.0,
     };
@@ -217,7 +228,7 @@ pub fn main() !void {
         handleMovement(&state);
         if (state.fall_timer > FALL_INTERVAL) {
             if (canMoveBlock(&state, 0, 1)) {
-                state.block_y += 1;
+                state.active_block.y += 1;
             } else {
                 placeBlock(&state);
                 spawnRandomBlock(&state);
