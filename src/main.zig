@@ -94,12 +94,13 @@ fn getBlockDefinition(block: BlockType) BlockDefinition {
     };
 }
 
-fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32, rotation: u2) void {
-    const def = getBlockDefinition(block);
+fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32, rotation: u2, alpha: u8) void {
+    var def = getBlockDefinition(block);
     const positions = rotateBlock(block, def.positions, rotation);
     for (positions) |pos| {
-        const x = origin_x + (pos[0] * BLOCK_SIZE);
-        const y = origin_y + (pos[1] * BLOCK_SIZE);
+        const x = (origin_x * BLOCK_SIZE) + (pos[0] * BLOCK_SIZE);
+        const y = (origin_y * BLOCK_SIZE) + (pos[1] * BLOCK_SIZE);
+        def.color.a = alpha; // 100 for translucent, 255 for opaque
         rl.drawRectangle(
             x,
             y,
@@ -155,7 +156,6 @@ fn handleMovement(state: *GameState) void {
         }
     }
     if (rl.isKeyPressed(rl.KeyboardKey.space)) {
-        // TODO: dont duplicate logic 
         while (canMoveBlock(state, 0, 1)) {
             state.active_block.y += 1;
         }
@@ -296,9 +296,10 @@ fn drawGrid(state: *GameState) void {
 fn drawActiveBlock(state: *GameState) void {
     drawTetrisBlock(
         state.active_block.block_type,
-        state.active_block.x * BLOCK_SIZE,
-        state.active_block.y * BLOCK_SIZE,
+        state.active_block.x,
+        state.active_block.y,
         state.active_block.rotation,
+        255,
     );
 }
 
@@ -319,6 +320,39 @@ fn drawSidebar(state: *GameState) void {
     var score_buf: [16]u8 = undefined;
     const score_str = std.fmt.bufPrintZ(&score_buf, "{d}", .{state.score}) catch "0";
     rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
+}
+
+fn getDropPreviewY(state: *GameState) i32 {
+    var preview_y = state.active_block.y;
+    // TODO: can we utilize canMoveBlock here?
+    while (true) {
+        var can_move = true;
+        const positions = getActiveBlockPositions(state.active_block);
+        for (positions) |pos| {
+            const x = state.active_block.x + pos[0];
+            const y = preview_y + pos[1] + 1;
+            if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT or state.grid[@intCast(y)][@intCast(x)] != null) {
+                can_move = false;
+                break;
+            }
+        }
+        if (!can_move) break;
+        preview_y += 1;
+    }
+    return preview_y;
+}
+
+fn drawBlockPreview(state: *GameState) void {
+    var preview_block = state.active_block;
+    preview_block.y = getDropPreviewY(state);
+
+    drawTetrisBlock(
+        preview_block.block_type,
+        preview_block.x,
+        preview_block.y,
+        preview_block.rotation,
+        100,
+    );
 }
 
 // Main game loop
@@ -361,12 +395,12 @@ pub fn main() !void {
         defer rl.endDrawing();
         rl.clearBackground(rl.Color.black);
         drawGrid(&state);
+        drawBlockPreview(&state);
         drawActiveBlock(&state);
         drawSidebar(&state);
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
         // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Save blocks
-        // TODO: Block placement preview
     }
 }
