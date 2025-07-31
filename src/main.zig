@@ -32,6 +32,7 @@ const ActiveBlock = struct {
     block_type: BlockType,
     x: i32, // grid position
     y: i32, // grid position
+    rotation: u2, // 0 = spawn, 1 = right, 2 = reverse, 3 = left
 };
 
 // Game state struct
@@ -93,9 +94,10 @@ fn getBlockDef(block: BlockType) BlockDef {
     };
 }
 
-fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32) void {
+fn drawTetrisBlock(block: BlockType, origin_x: i32, origin_y: i32, rotation: u2) void {
     const def = getBlockDef(block);
-    for (def.positions) |pos| {
+    const positions = rotatePositions(block, def.positions, rotation);
+    for (positions) |pos| {
         const x = origin_x + (pos[0] * BLOCK_SIZE);
         const y = origin_y + (pos[1] * BLOCK_SIZE);
         rl.drawRectangle(
@@ -126,6 +128,7 @@ fn spawnRandomBlock(state: *GameState) void {
         .block_type = BlockType.getRandom(),
         .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
         .y = 0,
+        .rotation = 0,
     };
     state.active_block = active_block;
 }
@@ -149,11 +152,42 @@ fn handleMovement(state: *GameState) void {
             state.fall_timer = 0.0;
         }
     }
+    if (rl.isKeyPressed(rl.KeyboardKey.up)) {
+        // TODO: Fix this ugly casting logic
+        const new_rotation: u2 = @as(u2, @intCast((@as(u4, state.active_block.rotation) + 1) % 4));
+        if (canRotateBlock(state, new_rotation)) {
+            state.active_block.rotation = new_rotation;
+        }
+    }
+}
+
+fn rotatePositions(block: BlockType, positions: [4][2]i32, rotation: u2) [4][2]i32 {
+    var rotated: [4][2]i32 = positions;
+    switch (block) {
+        .O => {
+            // O block does not rotate
+            return positions;
+        },
+        else => {
+            for (positions, 0..) |pos, i| {
+                const x = pos[0];
+                const y = pos[1];
+                // SRS: rotate around origin (0,0)
+                switch (rotation) {
+                    0 => rotated[i] = .{ x, y },
+                    1 => rotated[i] = .{ -y, x },
+                    2 => rotated[i] = .{ -x, -y },
+                    3 => rotated[i] = .{ y, -x },
+                }
+            }
+            return rotated;
+        },
+    }
 }
 
 fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
-    const def = getBlockDef(state.active_block.block_type);
-    for (def.positions) |pos| {
+    const positions = getActiveBlockPositions(state.active_block);
+    for (positions) |pos| {
         const x = state.active_block.x + pos[0] + dx;
         const y = state.active_block.y + pos[1] + dy;
         // Check bounds
@@ -164,15 +198,33 @@ fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
     return true;
 }
 
+fn canRotateBlock(state: *GameState, new_rotation: u2) bool {
+    const positions = rotatePositions(state.active_block.block_type, getActiveBlockPositions(state.active_block), new_rotation);
+    for (positions) |pos| {
+        const x = state.active_block.x + pos[0];
+        const y = state.active_block.y + pos[1];
+        // Check bounds
+        if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
+        // Check collision with placed blocks
+        if (state.grid[@intCast(y)][@intCast(x)] != null) return false;
+    }
+    return true;
+}
+
 fn placeBlock(state: *GameState) void {
-    const def = getBlockDef(state.active_block.block_type);
-    for (def.positions) |pos| {
+    const positions = getActiveBlockPositions(state.active_block);
+    for (positions) |pos| {
         const x = state.active_block.x + pos[0];
         const y = state.active_block.y + pos[1];
         if (x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT) {
             state.grid[@intCast(y)][@intCast(x)] = state.active_block.block_type;
         }
     }
+}
+
+fn getActiveBlockPositions(active: ActiveBlock) [4][2]i32 {
+    const def = getBlockDef(active.block_type);
+    return rotatePositions(active.block_type, def.positions, active.rotation);
 }
 
 fn drawGrid(state: *GameState) void {
@@ -200,7 +252,12 @@ fn drawGrid(state: *GameState) void {
 }
 
 fn drawActiveBlock(state: *GameState) void {
-    drawTetrisBlock(state.active_block.block_type, state.active_block.x * BLOCK_SIZE, state.active_block.y * BLOCK_SIZE);
+    drawTetrisBlock(
+        state.active_block.block_type,
+        state.active_block.x * BLOCK_SIZE,
+        state.active_block.y * BLOCK_SIZE,
+        state.active_block.rotation,
+    );
 }
 
 // Main game loop
@@ -214,6 +271,7 @@ pub fn main() !void {
         .block_type = BlockType.getRandom(),
         .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
         .y = 0,
+        .rotation = 0,
     };
 
     var state = GameState{
