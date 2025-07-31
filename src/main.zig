@@ -332,5 +332,7 @@ pub fn main() !void {
         // TODO: Next block incoming?
         // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Save blocks
+        // TODO: Block placement preview
+        // TODO: Instant block drop
     }
 }
