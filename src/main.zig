@@ -1,14 +1,15 @@
 const std = @import("std");
 const tetris = @import("tetris");
 const rl = @import("raylib");
-pub const b = @import("block.zig");
+const b = @import("block.zig"); // Import the BlockDefinition struct from block.zig
+const print = std.debug.print;
 
 // Game configuration constants
 const GRID_WIDTH: i32 = 10;
 const GRID_HEIGHT: i32 = 20;
 const BLOCK_SIZE: i32 = 40;
 const FALL_INTERVAL: f32 = 0.5;
-const BLOCK_START_OFFSET: i32 = 0;
+const BLOCK_START_OFFSET: i32 = 2;
 const SIDEBAR_WIDTH: i32 = 200; // Width of the sidebar for score display
 const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + SIDEBAR_WIDTH;
 const SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
@@ -26,28 +27,22 @@ const GameState = struct {
     score: u32 = 0, // Score for cleared lines
 };
 
+fn drawTetrisBlock(block: *b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
+    const blockRef: b.BlockDefinition = block.*;
+    const positions: b.block_position = blockRef.applyRotation(blockRef.rotation).positions;
 
-fn drawTetrisBlock(block: *b.BlockDefinition, origin_x: i32, origin_y: i32, rotation: u2, alpha: u8) void {
-    const positions = block.*.applyRotation(rotation).positions;
-    for (positions) |pos| {
-        const x = (origin_x * BLOCK_SIZE) + (pos[0] * BLOCK_SIZE);
-        const y = (origin_y * BLOCK_SIZE) + (pos[1] * BLOCK_SIZE);
-        block.color.a = alpha; // 100 for translucent, 255 for opaque
-        rl.drawRectangle(
-            x,
-            y,
-            BLOCK_SIZE,
-            BLOCK_SIZE,
-            block.color,
-        );
-        // Draw border for visual separation
-        rl.drawRectangleLines(
-            x,
-            y,
-            BLOCK_SIZE,
-            BLOCK_SIZE,
-            rl.Color.black,
-        );
+    for (positions, 0..) |row, i| {
+        const rowI = @as(i32, @intCast(i));
+        for (row, 0..) |cell, j| {
+            const colI = @as(i32, @intCast(j));
+            if (cell != 1) continue;
+            const x: i32 = (origin_x + colI) * BLOCK_SIZE;
+            const y: i32 = (origin_y + rowI) * BLOCK_SIZE;
+            var color = block.color;
+            color.a = alpha;
+            rl.drawRectangle(x, y, BLOCK_SIZE, BLOCK_SIZE, color);
+            rl.drawRectangleLines(x, y, BLOCK_SIZE, BLOCK_SIZE, rl.Color.black);
+        }
     }
 }
 
@@ -167,7 +162,7 @@ fn clearFullLines(state: *GameState) void {
 }
 
 // TODO: remove
-fn getActiveBlockPositions(active: ActiveBlock) [4][2]i32 {
+fn getActiveBlockPositions(active: ActiveBlock) b.block_position {
     return active.block_definition.applyRotation(active.block_definition.rotation).positions;
 }
 
@@ -200,7 +195,6 @@ fn drawActiveBlock(state: *GameState) void {
         &state.active_block.block_definition,
         state.active_block.x,
         state.active_block.y,
-        state.active_block.block_definition.rotation,
         255,
     );
 }
@@ -252,7 +246,6 @@ fn drawBlockPreview(state: *GameState) void {
         &preview_block.block_definition,
         preview_block.x,
         preview_block.y,
-        preview_block.rotation,
         100,
     );
 }
@@ -296,10 +289,11 @@ pub fn main() !void {
         defer rl.endDrawing();
         rl.clearBackground(rl.Color.black);
         drawGrid(&state);
-        // drawBlockPreview(&state);
+        drawBlockPreview(&state);
         drawActiveBlock(&state);
         drawSidebar(&state);
-        // TODO: Fix block drawing to use 3x3 and 4x4 grids for block definitions
+        // TODO: Fix block preview rendering after 4x4 block definition change
+        // TODO: Fix placed block rendering after 4x4 block definition change
         // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
