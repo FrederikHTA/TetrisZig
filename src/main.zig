@@ -29,9 +29,8 @@ const GameState = struct {
     score: u32 = 0, // Score for cleared lines
 };
 
-fn drawTetrisBlock(block: *b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
-    const blockRef: b.BlockDefinition = block.*;
-    const positions: b.blockPosition = blockRef.applyRotation(blockRef.rotation).positions;
+fn drawTetrisBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
+    const positions: b.blockPosition = block.applyRotation(block.rotation).positions;
 
     for (positions, 0..) |row, i| {
         const rowI = @as(i32, @intCast(i));
@@ -164,8 +163,8 @@ fn clearFullLines(state: *GameState) void {
     state.score += 100 * @as(u32, linesCleared);
 }
 
-fn drawGrid(state: *GameState) void {
-    for (state.grid, 0..) |row, y| {
+fn drawGrid(grid: Grid) void {
+    for (grid, 0..) |row, y| {
         for (row, 0..) |cell, x| {
             rl.drawRectangleLines(
                 @as(i32, @intCast(x)) * BLOCK_SIZE,
@@ -198,7 +197,7 @@ fn drawGrid(state: *GameState) void {
 
 fn drawActiveBlock(activeBlock: *ActiveBlock) void {
     drawTetrisBlock(
-        &activeBlock.block_definition,
+        activeBlock.block_definition,
         activeBlock.x,
         activeBlock.y,
         255,
@@ -235,12 +234,12 @@ fn getBlockDropLocationPreview(activeBlock: ActiveBlock, grid: Grid) i32 {
     return preview.y;
 }
 
-fn drawBlockPreview(state: *GameState) void {
-    var preview_block = state.active_block;
-    preview_block.y = getBlockDropLocationPreview(state.active_block, state.grid);
+fn drawBlockPreview(activeBlock:ActiveBlock, grid: Grid) void {
+    var preview_block = activeBlock;
+    preview_block.y = getBlockDropLocationPreview(activeBlock, grid);
 
     drawTetrisBlock(
-        &preview_block.block_definition,
+        preview_block.block_definition,
         preview_block.x,
         preview_block.y,
         100,
@@ -285,11 +284,10 @@ pub fn main() !void {
         rl.beginDrawing();
         defer rl.endDrawing();
         rl.clearBackground(rl.Color.black);
-        drawGrid(&state);
-        drawBlockPreview(&state);
+        drawGrid(state.grid);
+        drawBlockPreview(state.active_block, state.grid);
         drawActiveBlock(&state.active_block);
         drawSidebar(state.score);
-        // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
         // TODO: Save blocks
