@@ -166,6 +166,14 @@ fn clearFullLines(state: *GameState) void {
 fn drawGrid(state: *GameState) void {
     for (state.grid, 0..) |row, y| {
         for (row, 0..) |cell, x| {
+            rl.drawRectangleLines(
+                @as(i32, @intCast(x)) * BLOCK_SIZE,
+                @as(i32, @intCast(y)) * BLOCK_SIZE,
+                BLOCK_SIZE,
+                BLOCK_SIZE,
+                rl.Color.dark_gray.alpha(0.5),
+            );
+            
             if (cell) |block| {
                 const def = b.getBlockDefinition(block);
                 rl.drawRectangle(
