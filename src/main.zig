@@ -31,24 +31,6 @@ const GameState = struct {
     block_bag: bag.BlockBag,
 };
 
-fn drawTetrisBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
-    const positions: b.blockPosition = block.applyRotation(block.rotation).positions;
-
-    for (positions, 0..) |row, i| {
-        const rowI = @as(i32, @intCast(i));
-        for (row, 0..) |cell, j| {
-            const colI = @as(i32, @intCast(j));
-            if (cell != 1) continue;
-            const x: i32 = (origin_x + colI) * BLOCK_SIZE;
-            const y: i32 = (origin_y + rowI) * BLOCK_SIZE;
-            var color = block.color;
-            color.a = alpha;
-            rl.drawRectangle(x, y, BLOCK_SIZE, BLOCK_SIZE, color);
-            rl.drawRectangleLines(x, y, BLOCK_SIZE, BLOCK_SIZE, rl.Color.black);
-        }
-    }
-}
-
 fn spawnRandomBlock(state: *GameState) void {
     const block_type = state.block_bag.draw();
     const active_block = ActiveBlock{
@@ -166,6 +148,17 @@ fn clearFullLines(state: *GameState) void {
     state.score += 100 * @as(u32, linesCleared);
 }
 
+fn getBlockDropLocationPreview(activeBlock: ActiveBlock, grid: Grid) i32 {
+    var preview = activeBlock;
+
+    while (true) {
+        const can_move = canMoveBlock(preview, grid, 0, 1);
+        if (!can_move) break;
+        preview.y += 1;
+    }
+    return preview.y;
+}
+
 fn drawGrid(grid: Grid) void {
     for (grid, 0..) |row, y| {
         for (row, 0..) |cell, x| {
@@ -199,7 +192,7 @@ fn drawGrid(grid: Grid) void {
 }
 
 fn drawActiveBlock(activeBlock: *ActiveBlock) void {
-    drawTetrisBlock(
+    drawBlock(
         activeBlock.block_definition,
         activeBlock.x,
         activeBlock.y,
@@ -207,7 +200,6 @@ fn drawActiveBlock(activeBlock: *ActiveBlock) void {
     );
 }
 
-// Draw the score in the sidebar
 fn drawSidebar(score: u32, next_piece: b.BlockType) void {
     const sidebar_x = GRID_WIDTH * BLOCK_SIZE;
     rl.drawRectangle(
@@ -222,33 +214,40 @@ fn drawSidebar(score: u32, next_piece: b.BlockType) void {
     var score_buf: [16]u8 = undefined;
     const score_str = std.fmt.bufPrintZ(&score_buf, "{d}", .{score}) catch "0";
     rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
-    
+
     // Draw next piece preview
     rl.drawText("Next:", text_x, 140, 32, rl.Color.white);
     const next_def = b.getBlockDefinition(next_piece);
-    
+
     // Center the next piece preview in the sidebar
     const preview_x = sidebar_x + (SIDEBAR_WIDTH / 2) - (1 * BLOCK_SIZE);
     const preview_y = 200;
-    drawTetrisBlock(next_def, preview_x / BLOCK_SIZE, preview_y / BLOCK_SIZE, 255);
+    drawBlock(next_def, preview_x / BLOCK_SIZE, preview_y / BLOCK_SIZE, 255);
 }
 
-fn getBlockDropLocationPreview(activeBlock: ActiveBlock, grid: Grid) i32 {
-    var preview = activeBlock;
+fn drawBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
+    const positions: b.blockPosition = block.applyRotation(block.rotation).positions;
 
-    while (true) {
-        const can_move = canMoveBlock(preview, grid, 0, 1);
-        if (!can_move) break;
-        preview.y += 1;
+    for (positions, 0..) |row, i| {
+        const rowI = @as(i32, @intCast(i));
+        for (row, 0..) |cell, j| {
+            const colI = @as(i32, @intCast(j));
+            if (cell != 1) continue;
+            const x: i32 = (origin_x + colI) * BLOCK_SIZE;
+            const y: i32 = (origin_y + rowI) * BLOCK_SIZE;
+            var color = block.color;
+            color.a = alpha;
+            rl.drawRectangle(x, y, BLOCK_SIZE, BLOCK_SIZE, color);
+            rl.drawRectangleLines(x, y, BLOCK_SIZE, BLOCK_SIZE, rl.Color.black);
+        }
     }
-    return preview.y;
 }
 
 fn drawBlockPreview(activeBlock: ActiveBlock, grid: Grid) void {
     var preview_block = activeBlock;
     preview_block.y = getBlockDropLocationPreview(activeBlock, grid);
 
-    drawTetrisBlock(
+    drawBlock(
         preview_block.block_definition,
         preview_block.x,
         preview_block.y,
@@ -256,7 +255,6 @@ fn drawBlockPreview(activeBlock: ActiveBlock, grid: Grid) void {
     );
 }
 
-// Main game loop
 pub fn main() !void {
     // Initialization
     rl.initWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Tetris Clone");
@@ -269,13 +267,8 @@ pub fn main() !void {
         .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
         .y = 0,
     };
-    
-    var state = GameState{
-        .active_block = activeBlock,
-        .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
-        .fall_timer = 0.0,
-        .block_bag = blockBag
-    };
+
+    var state = GameState{ .active_block = activeBlock, .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT, .fall_timer = 0.0, .block_bag = blockBag };
 
     while (!rl.windowShouldClose()) {
         // Update
