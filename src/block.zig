@@ -1,8 +1,8 @@
 const std = @import("std");
 const rl = @import("raylib");
 
-pub const block_rotation = u2;
-pub const block_position = [4][4]u1;
+pub const blockRotation = u2;
+pub const blockPosition = [4][4]u1;
 
 pub const BlockType = enum {
     I,
@@ -17,7 +17,7 @@ pub const BlockType = enum {
 pub const BlockDefinition = struct {
     block_type: BlockType,
     color: rl.Color,
-    positions: block_position,
+    positions: blockPosition,
     rotation: u2, // 0 = spawn, 1 = right, 2 = reverse, 3 = left
 
     pub fn getRandom() BlockDefinition {
@@ -25,7 +25,7 @@ pub const BlockDefinition = struct {
         return getBlockDefinition(@enumFromInt(rand_index));
     }
 
-    pub fn applyRotation(self: BlockDefinition, rotation: block_rotation) BlockDefinition {
+    pub fn applyRotation(self: BlockDefinition, rotation: blockRotation) BlockDefinition {
         return BlockDefinition{
             .block_type = self.block_type,
             .color = self.color,
@@ -36,7 +36,7 @@ pub const BlockDefinition = struct {
 };
 
 // TODO: improve, seems very lazy
-fn getBlockPositions(block: BlockType, rotation: block_rotation) block_position {
+fn getBlockPositions(block: BlockType, rotation: blockRotation) blockPosition {
     const block_rotations: [4][4][4]u1 = switch (block) {
         .I => .{
             .{
@@ -241,7 +241,7 @@ pub fn getBlockDefinition(blockType: BlockType) BlockDefinition {
     };
 }
 
-fn rotateBlock(blockDefinition: BlockDefinition, rotation: block_rotation) block_position {
+fn rotateBlock(blockDefinition: BlockDefinition, rotation: blockRotation) blockPosition {
     return getBlockPositions(blockDefinition.block_type, rotation);
 }
 

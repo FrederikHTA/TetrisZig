@@ -14,6 +14,8 @@ const SIDEBAR_WIDTH: i32 = 200; // Width of the sidebar for score display
 const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + SIDEBAR_WIDTH;
 const SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
 
+const Grid = [GRID_HEIGHT][GRID_WIDTH]?b.BlockType;
+
 const ActiveBlock = struct {
     block_definition: b.BlockDefinition,
     x: i32, // grid position
@@ -22,14 +24,14 @@ const ActiveBlock = struct {
 
 const GameState = struct {
     active_block: ActiveBlock,
-    grid: [GRID_HEIGHT][GRID_WIDTH]?b.BlockType, // null = empty, otherwise filled
+    grid: Grid,
     fall_timer: f32,
     score: u32 = 0, // Score for cleared lines
 };
 
 fn drawTetrisBlock(block: *b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
     const blockRef: b.BlockDefinition = block.*;
-    const positions: b.block_position = blockRef.applyRotation(blockRef.rotation).positions;
+    const positions: b.blockPosition = blockRef.applyRotation(blockRef.rotation).positions;
 
     for (positions, 0..) |row, i| {
         const rowI = @as(i32, @intCast(i));
@@ -57,18 +59,17 @@ fn spawnRandomBlock(state: *GameState) void {
 
 fn handleMovement(state: *GameState) void {
     if (rl.isKeyPressed(rl.KeyboardKey.left)) {
-        if (canMoveBlock(state, -1, 0)) {
+        if (canMoveBlock(state.active_block, state.grid, -1, 0)) {
             state.active_block.x -= 1;
         }
     }
     if (rl.isKeyPressed(rl.KeyboardKey.right)) {
-        if (canMoveBlock(state, 1, 0)) {
+        if (canMoveBlock(state.active_block, state.grid, 1, 0)) {
             state.active_block.x += 1;
         }
     }
     if (rl.isKeyDown(rl.KeyboardKey.down)) {
-        // Drop block faster if possible
-        if (canMoveBlock(state, 0, 1)) {
+        if (canMoveBlock(state.active_block, state.grid, 0, 1)) {
             state.active_block.y += 1;
             // Optionally, reset fall_timer to avoid double move in same frame
             state.fall_timer = 0.0;
@@ -82,28 +83,26 @@ fn handleMovement(state: *GameState) void {
         }
     }
     if (rl.isKeyPressed(rl.KeyboardKey.space)) {
-        while (canMoveBlock(state, 0, 1)) {
+        while (canMoveBlock(state.active_block, state.grid, 0, 1)) {
             state.active_block.y += 1;
         }
-        placeBlock(state);
+        placeBlock(state.active_block, &state.grid);
         clearFullLines(state);
         spawnRandomBlock(state);
         state.fall_timer = 0.0;
     }
 }
 
-fn canMoveBlock(state: *GameState, dx: i32, dy: i32) bool {
-    // TODO: remove getActiveBlockPositions and use BlockDefinition directly
-    const positions = getActiveBlockPositions(state.active_block);
-    for (positions) |pos| {
-        const x = state.active_block.x + pos[0] + dx;
-        const y = state.active_block.y + pos[1] + dy;
-        // Check bounds
-        if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
-        // For downward movement, check collision with placed blocks
-        if (dy != 0 and state.grid[@intCast(y)][@intCast(x)] != null) return false;
-        // For horizontal movement, check collision with placed blocks
-        if (dx != 0 and state.grid[@intCast(y)][@intCast(x)] != null) return false;
+fn canMoveBlock(activeBlock: ActiveBlock, grid: Grid, dx: i32, dy: i32) bool {
+    const blockDef = activeBlock.block_definition.applyRotation(activeBlock.block_definition.rotation);
+    for (blockDef.positions, 0..) |row, rowI| {
+        for (row, 0..) |cell, colI| {
+            if (cell != 1) continue;
+            const x = activeBlock.x + @as(i32, @intCast(colI)) + dx;
+            const y = activeBlock.y + @as(i32, @intCast(rowI)) + dy;
+            if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
+            if (grid[@intCast(y)][@intCast(x)] != null) return false;
+        }
     }
     return true;
 }
@@ -122,13 +121,16 @@ fn canRotateBlock(state: *GameState, new_rotation: u2) bool {
     return true;
 }
 
-fn placeBlock(state: *GameState) void {
-    const positions = getActiveBlockPositions(state.active_block);
-    for (positions) |pos| {
-        const x = state.active_block.x + pos[0];
-        const y = state.active_block.y + pos[1];
-        if (x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT) {
-            state.grid[@intCast(y)][@intCast(x)] = state.active_block.block_definition.block_type;
+fn placeBlock(activeBlock: ActiveBlock, grid: *Grid) void {
+    const blockDef = activeBlock.block_definition.applyRotation(activeBlock.block_definition.rotation);
+    for (blockDef.positions, 0..) |row, rowI| {
+        for (row, 0..) |cell, colI| {
+            if (cell != 1) continue;
+            const x = activeBlock.x + @as(i32, @intCast(colI));
+            const y = activeBlock.y + @as(i32, @intCast(rowI));
+            if (x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT) {
+                grid[@intCast(y)][@intCast(x)] = blockDef.block_type;
+            }
         }
     }
 }
@@ -161,11 +163,6 @@ fn clearFullLines(state: *GameState) void {
     state.score += 100 * @as(u32, linesCleared);
 }
 
-// TODO: remove
-fn getActiveBlockPositions(active: ActiveBlock) b.block_position {
-    return active.block_definition.applyRotation(active.block_definition.rotation).positions;
-}
-
 fn drawGrid(state: *GameState) void {
     for (state.grid, 0..) |row, y| {
         for (row, 0..) |cell, x| {
@@ -190,17 +187,17 @@ fn drawGrid(state: *GameState) void {
     }
 }
 
-fn drawActiveBlock(state: *GameState) void {
+fn drawActiveBlock(activeBlock: *ActiveBlock) void {
     drawTetrisBlock(
-        &state.active_block.block_definition,
-        state.active_block.x,
-        state.active_block.y,
+        &activeBlock.block_definition,
+        activeBlock.x,
+        activeBlock.y,
         255,
     );
 }
 
 // Draw the score in the sidebar
-fn drawSidebar(state: *GameState) void {
+fn drawSidebar(score: u32) void {
     const sidebar_x = GRID_WIDTH * BLOCK_SIZE;
     // Draw sidebar background
     rl.drawRectangle(
@@ -214,33 +211,24 @@ fn drawSidebar(state: *GameState) void {
     const text_x = sidebar_x + (SIDEBAR_WIDTH / 4);
     rl.drawText("Score:", text_x, 40, 32, rl.Color.white);
     var score_buf: [16]u8 = undefined;
-    const score_str = std.fmt.bufPrintZ(&score_buf, "{d}", .{state.score}) catch "0";
+    const score_str = std.fmt.bufPrintZ(&score_buf, "{d}", .{score}) catch "0";
     rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
 }
 
-fn getBlockDropLocationPreview(state: *GameState) i32 {
-    var preview_y = state.active_block.y;
-    // TODO: can we utilize canMoveBlock here?
+fn getBlockDropLocationPreview(activeBlock: ActiveBlock, grid: Grid) i32 {
+    var preview = activeBlock;
+
     while (true) {
-        var can_move = true;
-        const positions = getActiveBlockPositions(state.active_block);
-        for (positions) |pos| {
-            const x = state.active_block.x + pos[0];
-            const y = preview_y + pos[1] + 1;
-            if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT or state.grid[@intCast(y)][@intCast(x)] != null) {
-                can_move = false;
-                break;
-            }
-        }
+        const can_move = canMoveBlock(preview, grid, 0, 1);
         if (!can_move) break;
-        preview_y += 1;
+        preview.y += 1;
     }
-    return preview_y;
+    return preview.y;
 }
 
 fn drawBlockPreview(state: *GameState) void {
     var preview_block = state.active_block;
-    preview_block.y = getBlockDropLocationPreview(state);
+    preview_block.y = getBlockDropLocationPreview(state.active_block, state.grid);
 
     drawTetrisBlock(
         &preview_block.block_definition,
@@ -274,11 +262,11 @@ pub fn main() !void {
         state.fall_timer += rl.getFrameTime();
         handleMovement(&state);
         if (state.fall_timer > FALL_INTERVAL) {
-            if (canMoveBlock(&state, 0, 1)) {
+            if (canMoveBlock(state.active_block, state.grid, 0, 1)) {
                 state.active_block.y += 1;
             } else {
-                placeBlock(&state);
-                // clearFullLines(&state);
+                placeBlock(state.active_block, &state.grid);
+                clearFullLines(&state);
                 spawnRandomBlock(&state);
             }
             state.fall_timer = 0.0;
@@ -290,10 +278,8 @@ pub fn main() !void {
         rl.clearBackground(rl.Color.black);
         drawGrid(&state);
         drawBlockPreview(&state);
-        drawActiveBlock(&state);
-        drawSidebar(&state);
-        // TODO: Fix block preview rendering after 4x4 block definition change
-        // TODO: Fix placed block rendering after 4x4 block definition change
+        drawActiveBlock(&state.active_block);
+        drawSidebar(&state.score);
         // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
