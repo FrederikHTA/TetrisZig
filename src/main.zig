@@ -303,6 +303,5 @@ pub fn main() !void {
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
         // TODO: Save blocks
-        // TODO: Use bag randomizer for blocks, so all blocks are used before repeating
     }
 }
