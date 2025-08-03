@@ -279,7 +279,7 @@ pub fn main() !void {
         drawGrid(&state);
         drawBlockPreview(&state);
         drawActiveBlock(&state.active_block);
-        drawSidebar(&state.score);
+        drawSidebar(state.score);
         // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
