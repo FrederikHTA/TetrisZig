@@ -245,17 +245,3 @@ fn rotateBlock(blockDefinition: BlockDefinition, rotation: blockRotation) blockP
     return getBlockPositions(blockDefinition.block_type, rotation);
 }
 
-// pub fn getBlockPositions(block: BlockType, rotation: block_rotation) [4][2]i32 {
-//     const def = getBlockDefinition(block);
-//     var positions: [4][2]i32 = undefined;
-//     var idx: usize = 0;
-//     for (def.shapes[rotation], 0..) |row, y| {
-//         for (row, 0..) |cell, x| {
-//             if (cell == 1) {
-//                 positions[idx] = .{ x, y };
-//                 idx += 1;
-//             }
-//         }
-//     }
-//     return positions;
-// }

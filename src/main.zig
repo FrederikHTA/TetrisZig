@@ -1,7 +1,8 @@
 const std = @import("std");
 const tetris = @import("tetris");
 const rl = @import("raylib");
-const b = @import("block.zig"); // Import the BlockDefinition struct from block.zig
+const b = @import("block.zig");
+const bag = @import("bag.zig");
 const print = std.debug.print;
 
 // Game configuration constants
@@ -27,6 +28,7 @@ const GameState = struct {
     grid: Grid,
     fall_timer: f32,
     score: u32 = 0, // Score for cleared lines
+    block_bag: bag.BlockBag,
 };
 
 fn drawTetrisBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
@@ -48,8 +50,9 @@ fn drawTetrisBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha
 }
 
 fn spawnRandomBlock(state: *GameState) void {
+    const block_type = state.block_bag.draw();
     const active_block = ActiveBlock{
-        .block_definition = b.BlockDefinition.getRandom(),
+        .block_definition = b.getBlockDefinition(block_type),
         .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
         .y = 0,
     };
@@ -234,7 +237,7 @@ fn getBlockDropLocationPreview(activeBlock: ActiveBlock, grid: Grid) i32 {
     return preview.y;
 }
 
-fn drawBlockPreview(activeBlock:ActiveBlock, grid: Grid) void {
+fn drawBlockPreview(activeBlock: ActiveBlock, grid: Grid) void {
     var preview_block = activeBlock;
     preview_block.y = getBlockDropLocationPreview(activeBlock, grid);
 
@@ -263,6 +266,7 @@ pub fn main() !void {
         .active_block = activeBlock,
         .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
         .fall_timer = 0.0,
+        .block_bag = bag.BlockBag.init(),
     };
 
     while (!rl.windowShouldClose()) {
