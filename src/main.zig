@@ -78,8 +78,10 @@ fn handleMovement(state: *GameState) void {
     if (rl.isKeyPressed(rl.KeyboardKey.up)) {
         // TODO: Fix this ugly casting logic
         const new_rotation: u2 = @as(u2, @intCast((@as(u4, state.active_block.block_definition.rotation) + 1) % 4));
-        if (canRotateBlock(state, new_rotation)) {
+        const can_rotate = canRotateBlockWithWallKick(state, new_rotation);
+        if (can_rotate.success) {
             state.active_block.block_definition.rotation = new_rotation;
+            state.active_block.x += can_rotate.x_offset;
         }
     }
     if (rl.isKeyPressed(rl.KeyboardKey.space)) {
@@ -107,20 +109,17 @@ fn canMoveBlock(activeBlock: ActiveBlock, grid: Grid, dx: i32, dy: i32) bool {
     return true;
 }
 
-fn canRotateBlock(state: *GameState, new_rotation: u2) bool {
-    const blockDef = state.active_block.block_definition.applyRotation(new_rotation);
-    for (blockDef.positions, 0..) |row, rowI| {
-        for (row, 0..) |cell, colI| {
-            if (cell != 1) continue;
-            const x = state.active_block.x + @as(i32, @intCast(colI));
-            const y = state.active_block.y + @as(i32, @intCast(rowI));
-            // Check bounds
-            if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
-            // Check collision with placed blocks
-            if (state.grid[@intCast(y)][@intCast(x)] != null) return false;
+fn canRotateBlockWithWallKick(state: *GameState, new_rotation: u2) struct { success: bool, x_offset: i32 } {
+    const kicks = [_]i8{ 0, -1, 1, -2, 2 };
+    for (kicks) |dx| {
+        var preview = state.active_block;
+        // preview.x += dx;
+        preview.block_definition.rotation = new_rotation;
+        if (canMoveBlock(preview, state.grid, dx, 0)) {
+            return .{ .success = true, .x_offset = dx };
         }
     }
-    return true;
+    return .{ .success = false, .x_offset = 0 };
 }
 
 fn placeBlock(activeBlock: ActiveBlock, grid: *Grid) void {
@@ -175,7 +174,7 @@ fn drawGrid(state: *GameState) void {
                 BLOCK_SIZE,
                 rl.Color.dark_gray.alpha(0.5),
             );
-            
+
             if (cell) |block| {
                 const def = b.getBlockDefinition(block);
                 rl.drawRectangle(
