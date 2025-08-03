@@ -24,11 +24,6 @@ pub const BlockDefinition = struct {
     positions: blockPosition,
     rotation: u2, // 0 = spawn, 1 = right, 2 = reverse, 3 = left
 
-    pub fn getRandom() BlockDefinition {
-        const rand_index = std.crypto.random.intRangeLessThan(usize, 0, @typeInfo(BlockType).@"enum".fields.len);
-        return getBlockDefinition(@enumFromInt(rand_index));
-    }
-
     pub fn applyRotation(self: BlockDefinition, rotation: blockRotation) BlockDefinition {
         return BlockDefinition{
             .block_type = self.block_type,
@@ -229,15 +224,20 @@ fn getBlockPositions(block: BlockType, rotation: blockRotation) blockPosition {
 }
 
 pub fn getBlockDefinition(blockType: BlockType) BlockDefinition {
-    return BlockDefinition{ .block_type = blockType, .rotation = 0, .positions = getBlockPositions(blockType, 0), .color = switch (blockType) {
-        .I => rl.Color.sky_blue,
-        .S => rl.Color.green,
-        .O => rl.Color.yellow,
-        .Z => rl.Color.red,
-        .J => rl.Color.blue,
-        .L => rl.Color.orange,
-        .T => rl.Color.purple,
-    } };
+    return BlockDefinition{
+        .block_type = blockType,
+        .rotation = 0,
+        .positions = getBlockPositions(blockType, 0),
+        .color = switch (blockType) {
+            .I => rl.Color.sky_blue,
+            .S => rl.Color.green,
+            .O => rl.Color.yellow,
+            .Z => rl.Color.red,
+            .J => rl.Color.blue,
+            .L => rl.Color.orange,
+            .T => rl.Color.purple,
+        },
+    };
 }
 
 fn rotateBlock(blockDefinition: BlockDefinition, rotation: blockRotation) blockPosition {

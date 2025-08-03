@@ -208,22 +208,29 @@ fn drawActiveBlock(activeBlock: *ActiveBlock) void {
 }
 
 // Draw the score in the sidebar
-fn drawSidebar(score: u32) void {
+fn drawSidebar(score: u32, next_piece: b.BlockType) void {
     const sidebar_x = GRID_WIDTH * BLOCK_SIZE;
-    // Draw sidebar background
     rl.drawRectangle(
         sidebar_x,
         0,
         SIDEBAR_WIDTH,
         SCREEN_HEIGHT,
-        rl.Color.dark_gray, // Choose a distinct color
+        rl.Color.dark_gray,
     );
-    // Draw score text
     const text_x = sidebar_x + (SIDEBAR_WIDTH / 4);
     rl.drawText("Score:", text_x, 40, 32, rl.Color.white);
     var score_buf: [16]u8 = undefined;
     const score_str = std.fmt.bufPrintZ(&score_buf, "{d}", .{score}) catch "0";
     rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
+    
+    // Draw next piece preview
+    rl.drawText("Next:", text_x, 140, 32, rl.Color.white);
+    const next_def = b.getBlockDefinition(next_piece);
+    
+    // Center the next piece preview in the sidebar
+    const preview_x = sidebar_x + (SIDEBAR_WIDTH / 2) - (1 * BLOCK_SIZE);
+    const preview_y = 200;
+    drawTetrisBlock(next_def, preview_x / BLOCK_SIZE, preview_y / BLOCK_SIZE, 255);
 }
 
 fn getBlockDropLocationPreview(activeBlock: ActiveBlock, grid: Grid) i32 {
@@ -256,17 +263,18 @@ pub fn main() !void {
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
+    var blockBag = bag.BlockBag.init();
     const activeBlock = ActiveBlock{
-        .block_definition = b.BlockDefinition.getRandom(),
+        .block_definition = b.getBlockDefinition(blockBag.draw()),
         .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
         .y = 0,
     };
-
+    
     var state = GameState{
         .active_block = activeBlock,
         .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
         .fall_timer = 0.0,
-        .block_bag = bag.BlockBag.init(),
+        .block_bag = blockBag
     };
 
     while (!rl.windowShouldClose()) {
@@ -291,7 +299,7 @@ pub fn main() !void {
         drawGrid(state.grid);
         drawBlockPreview(state.active_block, state.grid);
         drawActiveBlock(&state.active_block);
-        drawSidebar(state.score);
+        drawSidebar(state.score, state.block_bag.next_piece);
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
         // TODO: Save blocks
