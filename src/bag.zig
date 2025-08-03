@@ -9,23 +9,19 @@ pub const BlockBag = struct {
     pub fn init() BlockBag {
         var bag = BlockBag{
             .bag = undefined,
+            .next_piece = undefined, 
             .index = 0,
-            .next_piece = b.BlockType.I, // default, will be set on shuffle
         };
         bag.shuffle();
         bag.next_piece = bag.bag[bag.index];
         return bag;
     }
 
+    // TODO: Not sure this is the best way to shuffle the bag.
     pub fn shuffle(self: *BlockBag) void {
-        var block_types = [_]b.BlockType{ .I, .O, .S, .Z, .J, .L, .T };
-        for (block_types, 0..) |_, i| {
-            const j = std.crypto.random.intRangeLessThan(usize, 0, @typeInfo(b.BlockType).@"enum".fields.len);
-            // const j = prng.random().intRangeLessThan(usize, 0, block_types.len);
-            const tmp = block_types[i];
-            block_types[i] = block_types[j];
-            block_types[j] = tmp;
-        }
+        var block_types: [7]b.BlockType = b.BlockType.all();
+        var prng = std.Random.DefaultPrng.init(block_types.len);
+        prng.random().shuffle(b.BlockType, &block_types);
         self.bag = block_types;
         self.index = 0;
     }

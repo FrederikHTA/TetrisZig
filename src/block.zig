@@ -12,6 +12,10 @@ pub const BlockType = enum {
     J,
     L,
     T,
+
+    pub fn all() [7]BlockType {
+        return .{ .I, .S, .O, .Z, .J, .L, .T };
+    }
 };
 
 pub const BlockDefinition = struct {
@@ -225,11 +229,7 @@ fn getBlockPositions(block: BlockType, rotation: blockRotation) blockPosition {
 }
 
 pub fn getBlockDefinition(blockType: BlockType) BlockDefinition {
-    return BlockDefinition{
-        .block_type = blockType,
-        .rotation = 0,
-        .positions = getBlockPositions(blockType, 0),
-        .color = switch (blockType) {
+    return BlockDefinition{ .block_type = blockType, .rotation = 0, .positions = getBlockPositions(blockType, 0), .color = switch (blockType) {
         .I => rl.Color.sky_blue,
         .S => rl.Color.green,
         .O => rl.Color.yellow,
@@ -237,11 +237,9 @@ pub fn getBlockDefinition(blockType: BlockType) BlockDefinition {
         .J => rl.Color.blue,
         .L => rl.Color.orange,
         .T => rl.Color.purple,
-        }
-    };
+    } };
 }
 
 fn rotateBlock(blockDefinition: BlockDefinition, rotation: blockRotation) blockPosition {
     return getBlockPositions(blockDefinition.block_type, rotation);
 }
-
