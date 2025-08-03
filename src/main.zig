@@ -398,6 +398,7 @@ pub fn main() !void {
         drawBlockPreview(&state);
         drawActiveBlock(&state);
         drawSidebar(&state);
+        // TODO: Fix block drawing to use 3x3 and 4x4 grids for block definitions
         // TODO: Fix rotation / wall kicks / can rotate into other blocks
         // TODO: Die when blocks reach top
         // TODO: Next block incoming?
