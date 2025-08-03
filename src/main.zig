@@ -108,15 +108,17 @@ fn canMoveBlock(activeBlock: ActiveBlock, grid: Grid, dx: i32, dy: i32) bool {
 }
 
 fn canRotateBlock(state: *GameState, new_rotation: u2) bool {
-    const positions = state.active_block.block_definition.applyRotation(new_rotation).positions;
-
-    for (positions) |pos| {
-        const x = state.active_block.x + pos[0];
-        const y = state.active_block.y + pos[1];
-        // Check bounds
-        if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
-        // Check collision with placed blocks
-        if (state.grid[@intCast(y)][@intCast(x)] != null) return false;
+    const blockDef = state.active_block.block_definition.applyRotation(new_rotation);
+    for (blockDef.positions, 0..) |row, rowI| {
+        for (row, 0..) |cell, colI| {
+            if (cell != 1) continue;
+            const x = state.active_block.x + @as(i32, @intCast(colI));
+            const y = state.active_block.y + @as(i32, @intCast(rowI));
+            // Check bounds
+            if (x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT) return false;
+            // Check collision with placed blocks
+            if (state.grid[@intCast(y)][@intCast(x)] != null) return false;
+        }
     }
     return true;
 }
