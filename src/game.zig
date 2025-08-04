@@ -61,12 +61,12 @@ pub fn canMoveBlock(activeBlock: ActiveBlock, grid: Grid, dx: i32, dy: i32) bool
     return true;
 }
 
-pub fn canRotateBlockWithWallKick(state: *GameState, new_rotation: u2) struct { success: bool, x_offset: i32 } {
+pub fn canRotateBlockWithWallKick(activeBlock: ActiveBlock, grid: Grid, new_rotation: u2) struct { success: bool, x_offset: i32 } {
     const kicks = [_]i8{ 0, -1, 1, -2, 2 };
     for (kicks) |dx| {
-        var preview = state.active_block;
+        var preview = activeBlock;
         preview.block_definition.rotation = new_rotation;
-        if (canMoveBlock(preview, state.grid, dx, 0)) {
+        if (canMoveBlock(preview, grid, dx, 0)) {
             return .{ .success = true, .x_offset = dx };
         }
     }

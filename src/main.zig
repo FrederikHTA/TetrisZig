@@ -91,7 +91,7 @@ fn handleMovement(state: *game.GameState) void {
     }
     if (rl.isKeyPressed(rl.KeyboardKey.up)) {
         const new_rotation: u2 = @as(u2, @intCast((@as(u4, state.active_block.block_definition.rotation) + 1) % 4));
-        const can_rotate = game.canRotateBlockWithWallKick(state, new_rotation);
+        const can_rotate = game.canRotateBlockWithWallKick(state.active_block, state.grid, new_rotation);
         if (can_rotate.success) {
             state.active_block.block_definition.rotation = new_rotation;
             state.active_block.x += can_rotate.x_offset;
@@ -108,8 +108,16 @@ fn handleMovement(state: *game.GameState) void {
     }
     if (rl.isKeyPressed(rl.KeyboardKey.s)) {
         if (state.saved_block) |saved_block| {
-            state.active_block.block_definition = b.getBlockDefinition(saved_block);
-            state.saved_block = null;
+            const block_definition = b.getBlockDefinition(saved_block);
+            var active_block = state.active_block;
+            active_block.block_definition = block_definition;
+            
+            const can_rotate = game.canRotateBlockWithWallKick(active_block, state.grid, block_definition.rotation);
+            if(can_rotate.success) {
+                state.active_block.block_definition = block_definition;
+                state.active_block.x = state.active_block.x + can_rotate.x_offset;
+                state.saved_block = null;
+            }
         } else {
             state.saved_block = state.active_block.block_definition.block_type;
             game.spawnNextBlock(state);
