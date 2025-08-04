@@ -291,29 +291,22 @@ fn drawBlockPreview(activeBlock: ActiveBlock, grid: Grid) void {
     );
 }
 
-const GameScreen = enum { Start, Playing };
+const GameScreen = enum { Start, Playing, Death };
+
+fn isGameOver(grid: Grid) bool {
+    // If any cell in the top row is filled, game over
+    for (grid[0]) |cell| {
+        if (cell != null) return true;
+    }
+    return false;
+}
 
 pub fn main() !void {
     rl.initWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Tetris Clone");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
-    // var blockBag = bag.BlockBag.init();
-    // const activeBlock = ActiveBlock{
-    //     .block_definition = b.getBlockDefinition(blockBag.draw()),
-    //     .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
-    //     .y = 0,
-    // };
-    // 
-    // var state = GameState{
-    //     .active_block = activeBlock,
-    //     .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
-    //     .fall_timer = 0.0,
-    //     .block_bag = blockBag,
-    // };
-    // 
     var state = GameState.init();
-
     var screen: GameScreen = GameScreen.Start;
 
     while (!rl.windowShouldClose()) {
@@ -329,13 +322,11 @@ pub fn main() !void {
                 const logo_width = rl.measureText(logo_text, logo_font_size);
                 rl.drawText(
                     logo_text,
-                    @divTrunc((SCREEN_WIDTH - logo_width), 2),
+                    @divTrunc(SCREEN_WIDTH - logo_width, 2),
                     SCREEN_HEIGHT / 3,
                     logo_font_size,
                     rl.Color.yellow,
                 );
-
-                // Draw Start button
                 const btn_w = 240;
                 const btn_h = 60;
                 const btn_x = (SCREEN_WIDTH - btn_w) / 2;
@@ -351,11 +342,11 @@ pub fn main() !void {
                 );
                 rl.drawText("Start Game", btn_x + 32, btn_y + 12, 32, rl.Color.black);
                 if (hovered and rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    state = GameState.init();
                     screen = GameScreen.Playing;
                 }
             },
             GameScreen.Playing => {
-                // Update
                 state.fall_timer += rl.getFrameTime();
                 handleMovement(&state);
                 if (state.fall_timer > FALL_INTERVAL) {
@@ -365,15 +356,64 @@ pub fn main() !void {
                         placeBlock(state.active_block, &state.grid);
                         clearFullLines(&state);
                         spawnNextBlock(&state);
+                        if (isGameOver(state.grid)) {
+                            screen = GameScreen.Death;
+                        }
                     }
                     state.fall_timer = 0.0;
                 }
-                // Draw
                 drawGrid(state.grid);
                 drawBlockPreview(state.active_block, state.grid);
                 drawActiveBlock(&state.active_block);
                 drawSidebar(state.score, state.block_bag.next_piece, state.saved_block);
             },
+            GameScreen.Death => {
+                // Draw death screen
+                const lost_text = "YOU LOST";
+                const lost_font_size = 64;
+                const lost_width = rl.measureText(lost_text, lost_font_size);
+                rl.drawText(
+                    lost_text,
+                    @divTrunc(SCREEN_WIDTH - lost_width, 2),
+                    SCREEN_HEIGHT / 3,
+                    lost_font_size,
+                    rl.Color.red,
+                );
+                // Retry button
+                const btn_w = 180;
+                const btn_h = 50;
+                const btn_x = (SCREEN_WIDTH - btn_w) / 2;
+                const btn_y = SCREEN_HEIGHT / 2;
+                const mouse = rl.getMousePosition();
+                const retry_hovered = mouse.x >= btn_x and mouse.x <= btn_x + btn_w and mouse.y >= btn_y and mouse.y <= btn_y + btn_h;
+                rl.drawRectangle(
+                    btn_x,
+                    btn_y,
+                    btn_w,
+                    btn_h,
+                    if (retry_hovered) rl.Color.light_gray else rl.Color.gray,
+                );
+                rl.drawText("Retry", btn_x + 40, btn_y + 10, 32, rl.Color.black);
+                // Exit button
+                const exit_btn_y = btn_y + btn_h + 20;
+                const exit_hovered = mouse.x >= btn_x and mouse.x <= btn_x + btn_w and mouse.y >= exit_btn_y and mouse.y <= exit_btn_y + btn_h;
+                rl.drawRectangle(
+                    btn_x,
+                    exit_btn_y,
+                    btn_w,
+                    btn_h,
+                    if (exit_hovered) rl.Color.light_gray else rl.Color.gray,
+                );
+                rl.drawText("Exit", btn_x + 55, exit_btn_y + 10, 32, rl.Color.black);
+                if (retry_hovered and rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    state = GameState.init();
+                    screen = GameScreen.Playing;
+                }
+                if (exit_hovered and rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    break;
+                }
+            },
         }
     }
+    // TODO: switching to saved block can cause the block to be placed in an invalid position
 }
