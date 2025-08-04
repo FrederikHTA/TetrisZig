@@ -27,11 +27,12 @@ const GameState = struct {
     active_block: ActiveBlock,
     grid: Grid,
     fall_timer: f32,
-    score: u32 = 0, // Score for cleared lines
+    score: u32 = 0,
     block_bag: bag.BlockBag,
+    saved_block: ?b.BlockType = null,
 };
 
-fn spawnRandomBlock(state: *GameState) void {
+fn spawnNextBlock(state: *GameState) void {
     const block_type = state.block_bag.draw();
     const active_block = ActiveBlock{
         .block_definition = b.getBlockDefinition(block_type),
@@ -74,8 +75,19 @@ fn handleMovement(state: *GameState) void {
         }
         placeBlock(state.active_block, &state.grid);
         clearFullLines(state);
-        spawnRandomBlock(state);
+        spawnNextBlock(state);
         state.fall_timer = 0.0;
+    }
+    if (rl.isKeyPressed(rl.KeyboardKey.s)) {
+        if (state.saved_block) |saved_block| {
+            // If there's a saved block, swap it with the current active block
+            state.active_block.block_definition = b.getBlockDefinition(saved_block);
+            state.saved_block = null;
+        } else {
+            // Save the current active block
+            state.saved_block = state.active_block.block_definition.block_type;
+            spawnNextBlock(state);
+        }
     }
 }
 
@@ -200,7 +212,7 @@ fn drawActiveBlock(activeBlock: *ActiveBlock) void {
     );
 }
 
-fn drawSidebar(score: u32, next_piece: b.BlockType) void {
+fn drawSidebar(score: u32, next_block: b.BlockType, saved_block: ?b.BlockType) void {
     const sidebar_x = GRID_WIDTH * BLOCK_SIZE;
     rl.drawRectangle(
         sidebar_x,
@@ -216,13 +228,20 @@ fn drawSidebar(score: u32, next_piece: b.BlockType) void {
     rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
 
     // Draw next piece preview
-    rl.drawText("Next:", text_x, 140, 32, rl.Color.white);
-    const next_def = b.getBlockDefinition(next_piece);
+    const block_preview_x = sidebar_x + (SIDEBAR_WIDTH / 2) - (1 * BLOCK_SIZE);
 
-    // Center the next piece preview in the sidebar
-    const preview_x = sidebar_x + (SIDEBAR_WIDTH / 2) - (1 * BLOCK_SIZE);
-    const preview_y = 200;
-    drawBlock(next_def, preview_x / BLOCK_SIZE, preview_y / BLOCK_SIZE, 255);
+    rl.drawText("Next:", text_x, 140, 32, rl.Color.white);
+    const next_def = b.getBlockDefinition(next_block);
+    drawBlock(next_def, block_preview_x / BLOCK_SIZE, 200 / BLOCK_SIZE, 255);
+
+    // Center the saved piece preview in the sidebar
+    // Draw next block preview
+    rl.drawText("Saved:", text_x, 300, 32, rl.Color.white);
+    if (saved_block) |block| {
+        // If there's a saved block, draw it
+        const preview_def = b.getBlockDefinition(block);
+        drawBlock(preview_def, block_preview_x / BLOCK_SIZE, 360 / BLOCK_SIZE, 255);
+    }
 }
 
 fn drawBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
@@ -268,7 +287,12 @@ pub fn main() !void {
         .y = 0,
     };
 
-    var state = GameState{ .active_block = activeBlock, .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT, .fall_timer = 0.0, .block_bag = blockBag };
+    var state = GameState{
+        .active_block = activeBlock,
+        .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
+        .fall_timer = 0.0,
+        .block_bag = blockBag,
+    };
 
     while (!rl.windowShouldClose()) {
         // Update
@@ -280,7 +304,7 @@ pub fn main() !void {
             } else {
                 placeBlock(state.active_block, &state.grid);
                 clearFullLines(&state);
-                spawnRandomBlock(&state);
+                spawnNextBlock(&state);
             }
             state.fall_timer = 0.0;
         }
@@ -292,9 +316,8 @@ pub fn main() !void {
         drawGrid(state.grid);
         drawBlockPreview(state.active_block, state.grid);
         drawActiveBlock(&state.active_block);
-        drawSidebar(state.score, state.block_bag.next_piece);
+        drawSidebar(state.score, state.block_bag.next_piece, state.saved_block);
         // TODO: Die when blocks reach top
-        // TODO: Next block incoming?
         // TODO: Save blocks
     }
 }
