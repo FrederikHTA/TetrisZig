@@ -109,10 +109,10 @@ fn handleMovement(state: *game.GameState) void {
     if (rl.isKeyPressed(rl.KeyboardKey.s)) {
         if (state.saved_block) |saved_block| {
             const block_definition = b.getBlockDefinition(saved_block);
-            var active_block = state.active_block;
-            active_block.block_definition = block_definition;
+            var saved_active_block = state.active_block;
+            saved_active_block.block_definition = block_definition;
             
-            const can_rotate = game.canRotateBlockWithWallKick(active_block, state.grid, block_definition.rotation);
+            const can_rotate = game.canRotateBlockWithWallKick(saved_active_block, state.grid, block_definition.rotation);
             if(can_rotate.success) {
                 state.active_block.block_definition = block_definition;
                 state.active_block.x = state.active_block.x + can_rotate.x_offset;
