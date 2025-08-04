@@ -318,6 +318,6 @@ pub fn main() !void {
         drawActiveBlock(&state.active_block);
         drawSidebar(state.score, state.block_bag.next_piece, state.saved_block);
         // TODO: Die when blocks reach top
-        // TODO: Save blocks
+        // TODO: Block previews should be centered with the same origin position in the sidebar
     }
 }
