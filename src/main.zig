@@ -30,6 +30,23 @@ const GameState = struct {
     score: u32 = 0,
     block_bag: bag.BlockBag,
     saved_block: ?b.BlockType = null,
+
+    pub fn init() GameState {
+        var blockBag = bag.BlockBag.init();
+        const activeBlock = ActiveBlock{
+            .block_definition = b.getBlockDefinition(blockBag.draw()),
+            .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
+            .y = 0,
+        };
+
+        const state = GameState{
+            .active_block = activeBlock,
+            .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
+            .fall_timer = 0.0,
+            .block_bag = blockBag,
+        };
+        return state;
+    }
 };
 
 fn spawnNextBlock(state: *GameState) void {
@@ -274,50 +291,89 @@ fn drawBlockPreview(activeBlock: ActiveBlock, grid: Grid) void {
     );
 }
 
+const GameScreen = enum { Start, Playing };
+
 pub fn main() !void {
-    // Initialization
     rl.initWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Tetris Clone");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
-    var blockBag = bag.BlockBag.init();
-    const activeBlock = ActiveBlock{
-        .block_definition = b.getBlockDefinition(blockBag.draw()),
-        .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
-        .y = 0,
-    };
+    // var blockBag = bag.BlockBag.init();
+    // const activeBlock = ActiveBlock{
+    //     .block_definition = b.getBlockDefinition(blockBag.draw()),
+    //     .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
+    //     .y = 0,
+    // };
+    // 
+    // var state = GameState{
+    //     .active_block = activeBlock,
+    //     .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
+    //     .fall_timer = 0.0,
+    //     .block_bag = blockBag,
+    // };
+    // 
+    var state = GameState.init();
 
-    var state = GameState{
-        .active_block = activeBlock,
-        .grid = [_][GRID_WIDTH]?b.BlockType{[_]?b.BlockType{null} ** GRID_WIDTH} ** GRID_HEIGHT,
-        .fall_timer = 0.0,
-        .block_bag = blockBag,
-    };
+    var screen: GameScreen = GameScreen.Start;
 
     while (!rl.windowShouldClose()) {
-        // Update
-        state.fall_timer += rl.getFrameTime();
-        handleMovement(&state);
-        if (state.fall_timer > FALL_INTERVAL) {
-            if (canMoveBlock(state.active_block, state.grid, 0, 1)) {
-                state.active_block.y += 1;
-            } else {
-                placeBlock(state.active_block, &state.grid);
-                clearFullLines(&state);
-                spawnNextBlock(&state);
-            }
-            state.fall_timer = 0.0;
-        }
-
-        // Draw
         rl.beginDrawing();
         defer rl.endDrawing();
         rl.clearBackground(rl.Color.black);
-        drawGrid(state.grid);
-        drawBlockPreview(state.active_block, state.grid);
-        drawActiveBlock(&state.active_block);
-        drawSidebar(state.score, state.block_bag.next_piece, state.saved_block);
-        // TODO: Die when blocks reach top
-        // TODO: Block previews should be centered with the same origin position in the sidebar
+
+        switch (screen) {
+            GameScreen.Start => {
+                // Draw Tetris logo
+                const logo_text = "TETRIS";
+                const logo_font_size = 80;
+                const logo_width = rl.measureText(logo_text, logo_font_size);
+                rl.drawText(
+                    logo_text,
+                    @divTrunc((SCREEN_WIDTH - logo_width), 2),
+                    SCREEN_HEIGHT / 3,
+                    logo_font_size,
+                    rl.Color.yellow,
+                );
+
+                // Draw Start button
+                const btn_w = 240;
+                const btn_h = 60;
+                const btn_x = (SCREEN_WIDTH - btn_w) / 2;
+                const btn_y = SCREEN_HEIGHT / 2;
+                const mouse = rl.getMousePosition();
+                const hovered = mouse.x >= btn_x and mouse.x <= btn_x + btn_w and mouse.y >= btn_y and mouse.y <= btn_y + btn_h;
+                rl.drawRectangle(
+                    btn_x,
+                    btn_y,
+                    btn_w,
+                    btn_h,
+                    if (hovered) rl.Color.light_gray else rl.Color.gray,
+                );
+                rl.drawText("Start Game", btn_x + 32, btn_y + 12, 32, rl.Color.black);
+                if (hovered and rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    screen = GameScreen.Playing;
+                }
+            },
+            GameScreen.Playing => {
+                // Update
+                state.fall_timer += rl.getFrameTime();
+                handleMovement(&state);
+                if (state.fall_timer > FALL_INTERVAL) {
+                    if (canMoveBlock(state.active_block, state.grid, 0, 1)) {
+                        state.active_block.y += 1;
+                    } else {
+                        placeBlock(state.active_block, &state.grid);
+                        clearFullLines(&state);
+                        spawnNextBlock(&state);
+                    }
+                    state.fall_timer = 0.0;
+                }
+                // Draw
+                drawGrid(state.grid);
+                drawBlockPreview(state.active_block, state.grid);
+                drawActiveBlock(&state.active_block);
+                drawSidebar(state.score, state.block_bag.next_piece, state.saved_block);
+            },
+        }
     }
 }
