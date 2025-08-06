@@ -1,6 +1,7 @@
 const rl = @import("raylib");
 const b = @import("block.zig");
 const game = @import("game.zig");
+const std = @import("std");
 
 const BLOCK_SIZE: i32 = 40;
 const SIDEBAR_WIDTH: i32 = 200;
@@ -66,19 +67,32 @@ pub fn drawSidebar(score: u32, next_block: b.BlockType, saved_block: ?b.BlockTyp
         SCREEN_HEIGHT,
         rl.Color.dark_gray,
     );
+
+    // Draw score
     const text_x = sidebar_x + (SIDEBAR_WIDTH / 4);
     rl.drawText("Score:", text_x, 40, 32, rl.Color.white);
     var score_buf: [16]u8 = undefined;
     const score_str = @import("std").fmt.bufPrintZ(&score_buf, "{d}", .{score}) catch "0";
     rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
-    const block_preview_x = sidebar_x + (SIDEBAR_WIDTH / 2) - (1 * BLOCK_SIZE);
+
+    // Draw next block preview
+    const block_preview_x = sidebar_x + (SIDEBAR_WIDTH / 2) - BLOCK_SIZE;
     rl.drawText("Next:", text_x, 140, 32, rl.Color.white);
     const next_def = b.getBlockDefinition(next_block);
     drawBlock(next_def, block_preview_x / BLOCK_SIZE, 200 / BLOCK_SIZE, 255);
+
+    // Draw saved block preview
     rl.drawText("Saved:", text_x, 300, 32, rl.Color.white);
     if (saved_block) |block| {
+        // TODO: Fix this lazy offset calculation
+        const offset = switch (block) {
+            .O => BLOCK_SIZE,
+            .I => BLOCK_SIZE / 2,
+            else => 0,
+        };
+        std.debug.print("offset: .{}\n", .{offset});
         const preview_def = b.getBlockDefinition(block);
-        drawBlock(preview_def, block_preview_x / BLOCK_SIZE, 360 / BLOCK_SIZE, 255);
+        drawBlock(preview_def, ((@divTrunc(block_preview_x - offset, BLOCK_SIZE))), 360 / BLOCK_SIZE, 255);
     }
 }
 
@@ -92,4 +106,3 @@ pub fn drawBlockPreview(activeBlock: game.ActiveBlock, grid: game.Grid, getDropL
         100,
     );
 }
-

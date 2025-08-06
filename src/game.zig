@@ -23,6 +23,7 @@ pub const GameState = struct {
 
     pub fn init() GameState {
         var blockBag = bag.BlockBag.init();
+        blockBag.shuffle();
         const activeBlock = ActiveBlock{
             .block_definition = b.getBlockDefinition(blockBag.draw()),
             .x = GRID_WIDTH / 2 - BLOCK_START_OFFSET,
@@ -117,4 +118,3 @@ pub fn isGameOver(grid: Grid) bool {
     }
     return false;
 }
-

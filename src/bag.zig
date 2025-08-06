@@ -1,5 +1,5 @@
 const std = @import("std");
-const b = @import("block.zig"); 
+const b = @import("block.zig");
 
 pub const BlockBag = struct {
     bag: [7]b.BlockType,
@@ -9,7 +9,7 @@ pub const BlockBag = struct {
     pub fn init() BlockBag {
         var bag = BlockBag{
             .bag = undefined,
-            .next_piece = undefined, 
+            .next_piece = undefined,
             .index = 0,
         };
         bag.shuffle();
@@ -17,11 +17,9 @@ pub const BlockBag = struct {
         return bag;
     }
 
-    // TODO: Not sure this is the best way to shuffle the bag.
     pub fn shuffle(self: *BlockBag) void {
         var block_types: [7]b.BlockType = b.BlockType.all();
-        var prng = std.Random.DefaultPrng.init(block_types.len);
-        prng.random().shuffle(b.BlockType, &block_types);
+        std.crypto.random.shuffle(b.BlockType, &block_types);
         self.bag = block_types;
         self.index = 0;
     }

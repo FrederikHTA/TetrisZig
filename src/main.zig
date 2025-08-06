@@ -113,7 +113,7 @@ fn handleMovement(state: *game.GameState) void {
             saved_active_block.block_definition = block_definition;
 
             const can_rotate = game.canRotateBlockWithWallKick(saved_active_block, state.grid, block_definition.rotation);
-            if  (can_rotate.success) {
+            if (can_rotate.success) {
                 state.active_block.block_definition = block_definition;
                 state.active_block.x = state.active_block.x + can_rotate.x_offset;
                 state.saved_block = null;
