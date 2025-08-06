@@ -108,19 +108,22 @@ fn handleMovement(state: *game.GameState) void {
     }
     if (rl.isKeyPressed(rl.KeyboardKey.s)) {
         if (state.saved_block) |saved_block| {
-            const block_definition = b.getBlockDefinition(saved_block);
-            var saved_active_block = state.active_block;
-            saved_active_block.block_definition = block_definition;
+            const saved_block_definition = b.getBlockDefinition(saved_block);
+            // Create a copy of activeBlock to avoid modifying the original
+            var saved_active_block = state.active_block; 
+            saved_active_block.block_definition = saved_block_definition;
 
+            // Check if the saved block can be inserted at current location, with wall kick if needed.
             const can_rotate = game.canRotateBlockWithWallKick(
                 saved_active_block,
                 state.grid,
-                block_definition.rotation,
+                saved_block_definition.rotation,
             );
             
             if (can_rotate.success) {
+                // Set saved block to current active block, and update active block to saved block.
                 state.saved_block = state.active_block.block_definition.block_type;
-                state.active_block.block_definition = block_definition;
+                state.active_block.block_definition = saved_block_definition;
                 state.active_block.x += can_rotate.x_offset;
             }
         } else {
