@@ -75,24 +75,25 @@ pub fn drawSidebar(score: u32, next_block: b.BlockType, saved_block: ?b.BlockTyp
     const score_str = @import("std").fmt.bufPrintZ(&score_buf, "{d}", .{score}) catch "0";
     rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
 
+    // TODO: Fix!
+    const offset = switch (next_block) {
+        .O => 1,
+        .I => 1,
+        else => 0,
+    };
+    std.debug.print("offset: .{}\n", .{offset});
+
     // Draw next block preview
-    const block_preview_x = sidebar_x + (SIDEBAR_WIDTH / 2) - BLOCK_SIZE;
+    const block_preview_x: i32 = sidebar_x + (SIDEBAR_WIDTH / 2) - BLOCK_SIZE;
     rl.drawText("Next:", text_x, 140, 32, rl.Color.white);
     const next_def = b.getBlockDefinition(next_block);
-    drawBlock(next_def, block_preview_x / BLOCK_SIZE, 200 / BLOCK_SIZE, 255);
+    drawBlock(next_def, @divFloor(block_preview_x, BLOCK_SIZE), 200 / BLOCK_SIZE, 255);
 
     // Draw saved block preview
     rl.drawText("Saved:", text_x, 300, 32, rl.Color.white);
     if (saved_block) |block| {
-        // TODO: Fix this lazy offset calculation
-        const offset = switch (block) {
-            .O => BLOCK_SIZE,
-            .I => BLOCK_SIZE / 2,
-            else => 0,
-        };
-        std.debug.print("offset: .{}\n", .{offset});
         const preview_def = b.getBlockDefinition(block);
-        drawBlock(preview_def, ((@divTrunc(block_preview_x - offset, BLOCK_SIZE))), 360 / BLOCK_SIZE, 255);
+        drawBlock(preview_def, @divFloor(block_preview_x, BLOCK_SIZE), 360 / BLOCK_SIZE, 255);
     }
 }
 
