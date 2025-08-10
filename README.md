@@ -7,4 +7,9 @@ The project has been mostly coded using agents, and i've only made minor refacto
 The project is using Zig 0.14.0.
 Should be runnable by simply pulling the repository and running `zig build run` in the terminal.
 
-The project is still in a very early stage, and is not yet complete.
+TODO:
+- Drawing blocks in the sidebar uses grid positioning, which means i currently can only 
+draw the blocks in spaces of 40px. This is not ideal, as aligning the "I" block with other 
+blocks in the preview requires a 20px offset.
+- Blocks should fall faster as the game progresses.
+- Leaderboard system / saving highscores is missing.
