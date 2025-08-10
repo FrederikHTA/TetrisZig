@@ -1,39 +1,33 @@
 const rl = @import("raylib");
 const b = @import("block.zig");
 const game = @import("game.zig");
+const c = @import("constants.zig");
 const std = @import("std");
-
-const BLOCK_SIZE: i32 = 40;
-const SIDEBAR_WIDTH: i32 = 200;
-const GRID_WIDTH: i32 = 10;
-const GRID_HEIGHT: i32 = 20;
-const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + SIDEBAR_WIDTH;
-const SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
 
 pub fn drawGrid(grid: game.Grid) void {
     for (grid, 0..) |row, y| {
         for (row, 0..) |cell, x| {
             rl.drawRectangleLines(
-                @as(i32, @intCast(x)) * BLOCK_SIZE,
-                @as(i32, @intCast(y)) * BLOCK_SIZE,
-                BLOCK_SIZE,
-                BLOCK_SIZE,
+                @as(i32, @intCast(x)) * c.BLOCK_SIZE,
+                @as(i32, @intCast(y)) * c.BLOCK_SIZE,
+                c.BLOCK_SIZE,
+                c.BLOCK_SIZE,
                 rl.Color.dark_gray.alpha(0.5),
             );
             if (cell) |block| {
                 const def = b.getBlockDefinition(block);
                 rl.drawRectangle(
-                    @as(i32, @intCast(x)) * BLOCK_SIZE,
-                    @as(i32, @intCast(y)) * BLOCK_SIZE,
-                    BLOCK_SIZE,
-                    BLOCK_SIZE,
+                    @as(i32, @intCast(x)) * c.BLOCK_SIZE,
+                    @as(i32, @intCast(y)) * c.BLOCK_SIZE,
+                    c.BLOCK_SIZE,
+                    c.BLOCK_SIZE,
                     def.color,
                 );
                 rl.drawRectangleLines(
-                    @as(i32, @intCast(x)) * BLOCK_SIZE,
-                    @as(i32, @intCast(y)) * BLOCK_SIZE,
-                    BLOCK_SIZE,
-                    BLOCK_SIZE,
+                    @as(i32, @intCast(x)) * c.BLOCK_SIZE,
+                    @as(i32, @intCast(y)) * c.BLOCK_SIZE,
+                    c.BLOCK_SIZE,
+                    c.BLOCK_SIZE,
                     rl.Color.black,
                 );
             }
@@ -41,6 +35,8 @@ pub fn drawGrid(grid: game.Grid) void {
     }
 }
 
+/// Draws a block at the specified origin based on block size.
+/// This means x = 10 will be the 10th block in the grid, not pixel position.
 pub fn drawBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: u8) void {
     const positions: b.blockPosition = block.applyRotation(block.rotation).positions;
     for (positions, 0..) |row, i| {
@@ -48,52 +44,52 @@ pub fn drawBlock(block: b.BlockDefinition, origin_x: i32, origin_y: i32, alpha: 
         for (row, 0..) |cell, j| {
             const colI = @as(i32, @intCast(j));
             if (cell != 1) continue;
-            const x: i32 = (origin_x + colI) * BLOCK_SIZE;
-            const y: i32 = (origin_y + rowI) * BLOCK_SIZE;
+            const x: i32 = (origin_x + colI) * c.BLOCK_SIZE;
+            const y: i32 = (origin_y + rowI) * c.BLOCK_SIZE;
             var color = block.color;
             color.a = alpha;
-            rl.drawRectangle(x, y, BLOCK_SIZE, BLOCK_SIZE, color);
-            rl.drawRectangleLines(x, y, BLOCK_SIZE, BLOCK_SIZE, rl.Color.black);
+            rl.drawRectangle(x, y, c.BLOCK_SIZE, c.BLOCK_SIZE, color);
+            rl.drawRectangleLines(x, y, c.BLOCK_SIZE, c.BLOCK_SIZE, rl.Color.black);
         }
     }
 }
 
 pub fn drawSidebar(score: u32, next_block: b.BlockType, saved_block: ?b.BlockType) void {
-    const sidebar_x = GRID_WIDTH * BLOCK_SIZE;
+    const sidebar_x = c.GRID_WIDTH * c.BLOCK_SIZE;
+    const font_size = 32;
     rl.drawRectangle(
         sidebar_x,
         0,
-        SIDEBAR_WIDTH,
-        SCREEN_HEIGHT,
+        c.SIDEBAR_WIDTH,
+        c.SCREEN_HEIGHT,
         rl.Color.dark_gray,
     );
-
+    
     // Draw score
-    const text_x = sidebar_x + (SIDEBAR_WIDTH / 4);
-    rl.drawText("Score:", text_x, 40, 32, rl.Color.white);
+    const text_x = sidebar_x + (c.SIDEBAR_WIDTH / 4);
+    rl.drawText("Score:", text_x, 40, font_size, rl.Color.white);
     var score_buf: [16]u8 = undefined;
-    const score_str = @import("std").fmt.bufPrintZ(&score_buf, "{d}", .{score}) catch "0";
-    rl.drawText(score_str, text_x, 80, 32, rl.Color.yellow);
-
-    // TODO: Fix!
-    const offset = switch (next_block) {
-        .O => 1,
-        .I => 1,
-        else => 0,
-    };
-    std.debug.print("offset: .{}\n", .{offset});
+    const score_str = std.fmt.bufPrintZ(&score_buf, "{d}", .{score}) catch "0";
+    rl.drawText(score_str, text_x, 80, font_size, rl.Color.yellow);
 
     // Draw next block preview
-    const block_preview_x: i32 = sidebar_x + (SIDEBAR_WIDTH / 2) - BLOCK_SIZE;
-    rl.drawText("Next:", text_x, 140, 32, rl.Color.white);
+    const block_preview_x: i32 = sidebar_x + (c.SIDEBAR_WIDTH / c.BLOCK_SIZE) + c.BLOCK_SIZE;
+    rl.drawText("Next:", text_x, 140, font_size, rl.Color.white);
     const next_def = b.getBlockDefinition(next_block);
-    drawBlock(next_def, @divFloor(block_preview_x, BLOCK_SIZE), 200 / BLOCK_SIZE, 255);
+
+    const next_block_offet: i32 = if (next_block == .O) c.BLOCK_SIZE else 0;
+    // TODO:
+    // Due to the current implementation of drawBlock, the position is drawn in grid coordinates of block_size,
+    // and has to be an int. We cannot draw something at fx block_size / 2, which is needed to center the "I" block.
+    // I should probably make a new method that can draw at pixel positions, or change the current one to accept floats.
+    drawBlock(next_def, @divFloor(block_preview_x - next_block_offet, c.BLOCK_SIZE), 200 / c.BLOCK_SIZE, 255);
 
     // Draw saved block preview
-    rl.drawText("Saved:", text_x, 300, 32, rl.Color.white);
+    rl.drawText("Saved:", text_x, 300, font_size, rl.Color.white);
     if (saved_block) |block| {
         const preview_def = b.getBlockDefinition(block);
-        drawBlock(preview_def, @divFloor(block_preview_x, BLOCK_SIZE), 360 / BLOCK_SIZE, 255);
+        const preview_block_offet: i32 = if (block == .O) c.BLOCK_SIZE else 0;
+        drawBlock(preview_def, @divFloor(block_preview_x - preview_block_offet, c.BLOCK_SIZE), 360 / c.BLOCK_SIZE, 255);
     }
 }
 

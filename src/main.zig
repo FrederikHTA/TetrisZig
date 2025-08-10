@@ -4,17 +4,10 @@ const b = @import("block.zig");
 const game = @import("game.zig");
 const render = @import("render.zig");
 const screens = @import("screens.zig");
-
-const FALL_INTERVAL: f32 = 0.5;
-const BLOCK_SIZE: i32 = 40;
-const SIDEBAR_WIDTH: i32 = 200;
-const GRID_WIDTH: i32 = 10;
-const GRID_HEIGHT: i32 = 20;
-const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + SIDEBAR_WIDTH;
-const SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
+const c = @import("constants.zig");
 
 pub fn main() !void {
-    rl.initWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Tetris Clone");
+    rl.initWindow(c.SCREEN_WIDTH, c.SCREEN_HEIGHT, "Tetris Clone");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
@@ -38,7 +31,7 @@ pub fn main() !void {
             screens.GameScreen.Playing => {
                 state.fall_timer += rl.getFrameTime();
                 handleMovement(&state);
-                if (state.fall_timer > FALL_INTERVAL) {
+                if (state.fall_timer > c.FALL_INTERVAL) {
                     if (game.canMoveBlock(state.active_block, state.grid, 0, 1)) {
                         state.active_block.y += 1;
                     } else {

@@ -1,0 +1,7 @@
+pub const FALL_INTERVAL: f32 = 0.5;
+pub const BLOCK_SIZE: i32 = 40;
+pub const GRID_WIDTH: i32 = 10;
+pub const GRID_HEIGHT: i32 = 20;
+pub const SIDEBAR_WIDTH: i32 = 6 * BLOCK_SIZE;
+pub const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + SIDEBAR_WIDTH;
+pub const SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
