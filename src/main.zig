@@ -5,6 +5,7 @@ const game = @import("game.zig");
 const render = @import("render.zig");
 const screens = @import("screens.zig");
 const c = @import("constants.zig");
+const leaderboard = @import("leaderboard.zig");
 
 pub fn main() !void {
     rl.initWindow(c.SCREEN_WIDTH, c.SCREEN_HEIGHT, "Tetris Clone");
@@ -13,6 +14,18 @@ pub fn main() !void {
 
     var state = game.GameState.init();
     var screen: screens.GameScreen = screens.GameScreen.Start;
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    var leaderboard_entries: []leaderboard.LeaderboardEntry = leaderboard.loadLeaderboard(allocator) catch &[_]leaderboard.LeaderboardEntry{};
+
+    // for (leaderboard_entries, 0..) |value, i| {
+    //     std.debug.print("leaderboard {d}: {any}\n", .{i, value});
+    // }
+    
+    var name_buf: [16]u8 = undefined;
+    var name_len: usize = 0;
+    var name_entered = false;
 
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
@@ -36,11 +49,14 @@ pub fn main() !void {
                 render.renderGame(&state, &screen);
             },
             screens.GameScreen.Death => {
-                const action = screens.drawDeathScreen();
+                // const action = screens.drawDeathScreen();
+                const action = screens.drawDeathScreenWithLeaderboard(&state, &name_buf, &name_len, &name_entered, &leaderboard_entries, allocator);
                 switch (action) {
                     screens.DeathScreenAction.retry => {
                         state = game.GameState.init();
                         screen = screens.GameScreen.Playing;
+                        name_len = 0;
+                        name_entered = false;
                     },
                     screens.DeathScreenAction.exit => {
                         break;

@@ -4,6 +4,7 @@ const game = @import("game.zig");
 const c = @import("constants.zig");
 const screen = @import("screens.zig");
 const std = @import("std");
+const leaderboard = @import("leaderboard.zig");
 
 pub fn renderGame(state : *game.GameState, gameScreen: *screen.GameScreen) void {
     if (state.fall_timer > c.FALL_INTERVAL) {
@@ -36,6 +37,25 @@ pub fn renderGame(state : *game.GameState, gameScreen: *screen.GameScreen) void 
         state.block_bag.next_piece,
         state.saved_block,
     );
+}
+
+pub fn drawLeaderboard(entries: []const leaderboard.LeaderboardEntry, x: i32, y: i32) void {
+    const font_size = 28;
+    rl.drawText("Leaderboard", x, y, font_size, rl.Color.yellow);
+
+    var y_offset = y + font_size + 8;
+    for (entries, 0..) |entry, i| {
+        var line_buf: [64]u8 = undefined;
+        // Format: "1. NAME .......... 12345"
+        const name = std.mem.trimRight(u8, &entry.name, "");
+        const line = std.fmt.bufPrintZ(
+            &line_buf,
+            "{d}. {s: <16} {d}",
+            .{i + 1, name, entry.score},
+        ) catch "ERR";
+        rl.drawText(line, x, y_offset, 24, rl.Color.white);
+        y_offset += 28;
+    }
 }
 
 pub fn drawGrid(grid: game.Grid) void {
