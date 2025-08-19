@@ -11,8 +11,10 @@ const SCREEN_WIDTH = GRID_WIDTH * BLOCK_SIZE + SIDEBAR_WIDTH;
 const SCREEN_HEIGHT = GRID_HEIGHT * BLOCK_SIZE;
 
 pub const GameScreen = enum { Start, Playing, Death };
+pub const DeathScreenAction = enum { retry, exit, none };
+pub const StartScreenAction = enum { start, none };
 
-pub fn drawStartScreen(startClicked: *bool) void {
+pub fn drawStartScreen() StartScreenAction {
     const logo_text = "TETRIS";
     const logo_font_size = 80;
     const logo_width = rl.measureText(logo_text, logo_font_size);
@@ -38,11 +40,12 @@ pub fn drawStartScreen(startClicked: *bool) void {
     );
     rl.drawText("Start Game", btn_x + 32, btn_y + 12, 32, rl.Color.black);
     if (hovered and rl.isMouseButtonPressed(rl.MouseButton.left)) {
-        startClicked.* = true;
+        return StartScreenAction.start;
     }
+    return StartScreenAction.none;
 }
 
-pub fn drawDeathScreen(retryClicked: *bool, exitClicked: *bool) void {
+pub fn drawDeathScreen() DeathScreenAction {
     const lost_text = "YOU LOST";
     const lost_font_size = 64;
     const lost_width = rl.measureText(lost_text, lost_font_size);
@@ -78,10 +81,10 @@ pub fn drawDeathScreen(retryClicked: *bool, exitClicked: *bool) void {
     );
     rl.drawText("Exit", btn_x + 55, exit_btn_y + 10, 32, rl.Color.black);
     if (retry_hovered and rl.isMouseButtonPressed(rl.MouseButton.left)) {
-        retryClicked.* = true;
+        return DeathScreenAction.retry;
     }
     if (exit_hovered and rl.isMouseButtonPressed(rl.MouseButton.left)) {
-        exitClicked.* = true;
+        return DeathScreenAction.exit;
     }
+    return DeathScreenAction.none;
 }
-

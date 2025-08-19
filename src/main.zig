@@ -21,57 +21,31 @@ pub fn main() !void {
 
         switch (screen) {
             screens.GameScreen.Start => {
-                var startClicked = false;
-                screens.drawStartScreen(&startClicked);
-                if (startClicked) {
-                    state = game.GameState.init();
-                    screen = screens.GameScreen.Playing;
+                const action = screens.drawStartScreen();
+                switch (action) {
+                    screens.StartScreenAction.start => {
+                        state = game.GameState.init();
+                        screen = screens.GameScreen.Playing;
+                    },
+                    screens.StartScreenAction.none => {}, // No action needed, just exit the loop.
                 }
             },
             screens.GameScreen.Playing => {
                 state.fall_timer += rl.getFrameTime();
                 handleMovement(&state);
-                if (state.fall_timer > c.FALL_INTERVAL) {
-                    if (game.canMoveBlock(state.active_block, state.grid, 0, 1)) {
-                        state.active_block.y += 1;
-                    } else {
-                        game.placeBlock(state.active_block, &state.grid);
-                        game.clearFullLines(&state);
-                        game.spawnNextBlock(&state);
-                        if (game.isGameOver(state.grid)) {
-                            screen = screens.GameScreen.Death;
-                        }
-                    }
-                    state.fall_timer = 0.0;
-                }
-                render.drawGrid(state.grid);
-                render.drawBlockPreview(
-                    state.active_block,
-                    state.grid,
-                    game.getBlockDropLocationPreview,
-                );
-                render.drawBlock(
-                    state.active_block.block_definition,
-                    state.active_block.x,
-                    state.active_block.y,
-                    255,
-                );
-                render.drawSidebar(
-                    state.score,
-                    state.block_bag.next_piece,
-                    state.saved_block,
-                );
+                render.renderGame(&state, &screen);
             },
             screens.GameScreen.Death => {
-                var retryClicked = false;
-                var exitClicked = false;
-                screens.drawDeathScreen(&retryClicked, &exitClicked);
-                if (retryClicked) {
-                    state = game.GameState.init();
-                    screen = screens.GameScreen.Playing;
-                }
-                if (exitClicked) {
-                    break;
+                const action = screens.drawDeathScreen();
+                switch (action) {
+                    screens.DeathScreenAction.retry => {
+                        state = game.GameState.init();
+                        screen = screens.GameScreen.Playing;
+                    },
+                    screens.DeathScreenAction.exit => {
+                        break;
+                    },
+                    screens.DeathScreenAction.none => {}, // No action needed, just exit the loop.
                 }
             },
         }

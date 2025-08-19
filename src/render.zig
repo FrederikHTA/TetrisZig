@@ -2,7 +2,41 @@ const rl = @import("raylib");
 const b = @import("block.zig");
 const game = @import("game.zig");
 const c = @import("constants.zig");
+const screen = @import("screens.zig");
 const std = @import("std");
+
+pub fn renderGame(state : *game.GameState, gameScreen: *screen.GameScreen) void {
+    if (state.fall_timer > c.FALL_INTERVAL) {
+        if (game.canMoveBlock(state.active_block, state.grid, 0, 1)) {
+            state.active_block.y += 1;
+        } else {
+            game.placeBlock(state.active_block, &state.grid);
+            game.clearFullLines(state);
+            game.spawnNextBlock(state);
+            if (game.isGameOver(state.grid)) {
+                gameScreen.* = screen.GameScreen.Death;
+            }
+        }
+        state.fall_timer = 0.0;
+    }
+    drawGrid(state.grid);
+    drawBlockPreview(
+        state.active_block,
+        state.grid,
+        game.getBlockDropLocationPreview,
+    );
+    drawBlock(
+        state.active_block.block_definition,
+        state.active_block.x,
+        state.active_block.y,
+        255,
+    );
+    drawSidebar(
+        state.score,
+        state.block_bag.next_piece,
+        state.saved_block,
+    );
+}
 
 pub fn drawGrid(grid: game.Grid) void {
     for (grid, 0..) |row, y| {
