@@ -45,9 +45,22 @@ pub fn main() !void {
                     state.fall_timer = 0.0;
                 }
                 render.drawGrid(state.grid);
-                render.drawBlockPreview(state.active_block, state.grid, getBlockDropLocationPreview);
-                render.drawBlock(state.active_block.block_definition, state.active_block.x, state.active_block.y, 255);
-                render.drawSidebar(state.score, state.block_bag.next_piece, state.saved_block);
+                render.drawBlockPreview(
+                    state.active_block,
+                    state.grid,
+                    game.getBlockDropLocationPreview,
+                );
+                render.drawBlock(
+                    state.active_block.block_definition,
+                    state.active_block.x,
+                    state.active_block.y,
+                    255,
+                );
+                render.drawSidebar(
+                    state.score,
+                    state.block_bag.next_piece,
+                    state.saved_block,
+                );
             },
             screens.GameScreen.Death => {
                 var retryClicked = false;
@@ -103,7 +116,7 @@ fn handleMovement(state: *game.GameState) void {
         if (state.saved_block) |saved_block| {
             const saved_block_definition = b.getBlockDefinition(saved_block);
             // Create a copy of activeBlock to avoid modifying the original
-            var saved_active_block = state.active_block; 
+            var saved_active_block = state.active_block;
             saved_active_block.block_definition = saved_block_definition;
 
             // Check if the saved block can be inserted at current location, with wall kick if needed.
@@ -112,7 +125,7 @@ fn handleMovement(state: *game.GameState) void {
                 state.grid,
                 saved_block_definition.rotation,
             );
-            
+
             if (can_rotate.success) {
                 // Set saved block to current active block, and update active block to saved block.
                 state.saved_block = state.active_block.block_definition.block_type;
@@ -124,14 +137,4 @@ fn handleMovement(state: *game.GameState) void {
             game.spawnNextBlock(state);
         }
     }
-}
-
-fn getBlockDropLocationPreview(activeBlock: game.ActiveBlock, grid: game.Grid) i32 {
-    var preview = activeBlock;
-    while (true) {
-        const can_move = game.canMoveBlock(preview, grid, 0, 1);
-        if (!can_move) break;
-        preview.y += 1;
-    }
-    return preview.y;
 }

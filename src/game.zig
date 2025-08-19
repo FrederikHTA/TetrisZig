@@ -38,6 +38,16 @@ pub const GameState = struct {
     }
 };
 
+pub fn getBlockDropLocationPreview(activeBlock: ActiveBlock, grid: Grid) i32 {
+    var preview = activeBlock;
+    while (true) {
+        const can_move = canMoveBlock(preview, grid, 0, 1);
+        if (!can_move) break;
+        preview.y += 1;
+    }
+    return preview.y;
+}
+
 pub fn spawnNextBlock(state: *GameState) void {
     const block_type = state.block_bag.draw();
     const active_block = ActiveBlock{

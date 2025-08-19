@@ -64,7 +64,7 @@ pub fn drawSidebar(score: u32, next_block: b.BlockType, saved_block: ?b.BlockTyp
         c.SCREEN_HEIGHT,
         rl.Color.dark_gray,
     );
-    
+
     // Draw score
     const text_x = sidebar_x + (c.SIDEBAR_WIDTH / 4);
     rl.drawText("Score:", text_x, 40, font_size, rl.Color.white);
@@ -93,7 +93,11 @@ pub fn drawSidebar(score: u32, next_block: b.BlockType, saved_block: ?b.BlockTyp
     }
 }
 
-pub fn drawBlockPreview(activeBlock: game.ActiveBlock, grid: game.Grid, getDropLocation: fn (game.ActiveBlock, game.Grid) i32) void {
+pub fn drawBlockPreview(
+    activeBlock: game.ActiveBlock,
+    grid: game.Grid,
+    getDropLocation: fn (game.ActiveBlock, game.Grid) i32,
+) void {
     var preview_block = activeBlock;
     preview_block.y = getDropLocation(activeBlock, grid);
     drawBlock(
