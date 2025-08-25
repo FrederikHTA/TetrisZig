@@ -22,7 +22,7 @@ pub fn main() !void {
     // for (leaderboard_entries, 0..) |value, i| {
     //     std.debug.print("leaderboard {d}: {any}\n", .{i, value});
     // }
-    
+
     var name_buf: [16]u8 = undefined;
     var name_len: usize = 0;
     var name_entered = false;
@@ -50,7 +50,14 @@ pub fn main() !void {
             },
             screens.GameScreen.Death => {
                 // const action = screens.drawDeathScreen();
-                const action = screens.drawDeathScreenWithLeaderboard(&state, &name_buf, &name_len, &name_entered, &leaderboard_entries, allocator);
+                const action = screens.drawDeathScreenWithLeaderboard(
+                    &state,
+                    &name_buf,
+                    &name_len,
+                    &name_entered,
+                    &leaderboard_entries,
+                    allocator,
+                );
                 switch (action) {
                     screens.DeathScreenAction.retry => {
                         state = game.GameState.init();

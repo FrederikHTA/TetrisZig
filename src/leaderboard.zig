@@ -6,12 +6,15 @@ pub const LeaderboardEntry = struct {
 };
 
 pub const MaxEntries = 10;
-pub const LeaderboardFile = "leaderboard.dat";
+pub const LeaderboardFile = "leaderboard.txt";
 
+// TODO: fix this
 pub fn loadLeaderboard(allocator: std.mem.Allocator) ![]LeaderboardEntry {
     const entry_size = @sizeOf(LeaderboardEntry);
     var file = std.fs.cwd().openFile(LeaderboardFile, .{}) catch |err| {
-        if (err == error.FileNotFound) return allocator.alloc(LeaderboardEntry, 0);
+        if (err == error.FileNotFound) {
+            return allocator.alloc(LeaderboardEntry, 0);
+        }
         return err;
     };
     defer file.close();
@@ -56,9 +59,8 @@ pub fn addScore(
         .name = [_]u8{0} ** 16,
         .score = score,
     };
-    const name_len = @min(name.len, entry.name.len);
     // std.mem.copy(u8, entry.name[0..name_len], name[0..name_len]);
-    @memcpy(entry.name[0..name_len], name[0..name_len]);
+    @memcpy(entry.name[0..name.len], name[0..name.len]);
 
     try list.append(entry);
 
@@ -78,10 +80,7 @@ pub fn addScore(
 }
 
 pub fn saveLeaderboard(entries: []const LeaderboardEntry) !void {
-    var file = try std.fs.cwd().createFile(
-        LeaderboardFile,
-        .{ .truncate = true }
-    );
+    var file = try std.fs.cwd().createFile(LeaderboardFile, .{ .truncate = true });
     defer file.close();
 
     // Truncate file to zero length before writing
@@ -92,4 +91,3 @@ pub fn saveLeaderboard(entries: []const LeaderboardEntry) !void {
         try file.writer().writeInt(u32, entry.score, .little);
     }
 }
-

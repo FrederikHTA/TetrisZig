@@ -116,6 +116,7 @@ pub fn drawDeathScreenWithLeaderboard(
             // Handle character input
             const keyPressed = rl.getKeyPressed();
             if (@intFromEnum(keyPressed) >= 65 and @intFromEnum(keyPressed) <= 90 and name_len.* < name_buf.len) {
+                std.debug.print("name_buf: {d}", .{name_buf.len});
                 name_buf[name_len.*] = @as(u8, @intCast(@intFromEnum(keyPressed)));
                 name_len.* += 1;
             } else if (keyPressed == rl.KeyboardKey.backspace and name_len.* > 0) {
