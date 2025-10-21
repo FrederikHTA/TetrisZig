@@ -97,20 +97,22 @@ pub fn drawDeathScreenWithLeaderboard(
     name_buf: []u8,
     name_len: *usize,
     name_entered: *bool,
-    leaderboard_entries: *[]leaderboard.LeaderboardEntry,
-    allocator: std.mem.Allocator,
 ) DeathScreenAction {
     if (!name_entered.*) {
+        if(state.score > 100) {
+            std.debug.print("score: {d}", .{state.score});
+        }
+
         // Handle name input
         if (rl.isKeyPressed(rl.KeyboardKey.enter) and name_len.* > 0) {
             // Add score to leaderboard
-            leaderboard_entries.* = leaderboard.addScore(
-                allocator,
-                leaderboard_entries.*,
-                name_buf[0..name_len.*],
-                state.score,
-            ) catch leaderboard_entries.*;
-            leaderboard.saveLeaderboard(leaderboard_entries.*) catch {};
+            // leaderboard_entries.* = leaderboard.addScore(
+            //     allocator,
+            //     leaderboard_entries.*,
+            //     name_buf[0..name_len.*],
+            //     state.score,
+            // ) catch leaderboard_entries.*;
+            // leaderboard.saveLeaderboard(leaderboard_entries.*) catch {};
             name_entered.* = true;
         } else {
             // Handle character input
@@ -137,8 +139,8 @@ pub fn drawDeathScreenWithLeaderboard(
     );
 
     // Draw leaderboard
-    const leaderboard_width = rl.measureText("Leaderboard", 28);
-    render.drawLeaderboard(@ptrCast(leaderboard_entries.*), @divTrunc((SCREEN_WIDTH - leaderboard_width), 2), 200);
+    // const leaderboard_width = rl.measureText("Leaderboard", 28);
+    // render.drawLeaderboard(@ptrCast(leaderboard_entries.*), @divTrunc((SCREEN_WIDTH - leaderboard_width), 2), 200);
 
     // Draw name input if needed
     const enter_name_text = "Enter your name:";

@@ -15,14 +15,6 @@ pub fn main() !void {
     var state = game.GameState.init();
     var screen: screens.GameScreen = screens.GameScreen.Start;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-    var leaderboard_entries: []leaderboard.LeaderboardEntry = leaderboard.loadLeaderboard(allocator) catch &[_]leaderboard.LeaderboardEntry{};
-
-    // for (leaderboard_entries, 0..) |value, i| {
-    //     std.debug.print("leaderboard {d}: {any}\n", .{i, value});
-    // }
-
     var name_buf: [16]u8 = undefined;
     var name_len: usize = 0;
     var name_entered = false;
@@ -55,8 +47,6 @@ pub fn main() !void {
                     &name_buf,
                     &name_len,
                     &name_entered,
-                    &leaderboard_entries,
-                    allocator,
                 );
                 switch (action) {
                     screens.DeathScreenAction.retry => {
