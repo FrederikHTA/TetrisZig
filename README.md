@@ -13,3 +13,6 @@ draw the blocks in spaces of 40px. This is not ideal, as aligning the "I" block 
 blocks in the preview requires a 20px offset.
 - Blocks should fall faster as the game progresses.
 - Leaderboard system / saving highscores is missing.
+
+// Needed for zig to work in fedora with the newest raylib-zig bindings :)
+sudo dnf install alsa-lib-devel libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel
