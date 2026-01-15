@@ -15,4 +15,5 @@ blocks in the preview requires a 20px offset.
 - Leaderboard system / saving highscores is missing.
 
 // Needed for zig to work in fedora with the newest raylib-zig bindings :)
-sudo dnf install alsa-lib-devel libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel
+
+```sudo dnf install alsa-lib-devel libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel```
